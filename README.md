@@ -13,14 +13,14 @@ Open the project in Microsoft Visual Studio and then hit F5 to run.
 
 ###  Upload 
 
-![Start](docs/Start.png)
+![Start](Docs/Start.png)
 
 - Upload your XML NodeSet file. (NOTE: Dependent NodeSet files need to be uploaded together or in the required order.)
 
 
 ### Browsing
 
-![Browsing](docs/Sample.png)
+![Browsing](Docs/Sample.png)
 
 - One can browse and interact with the model.
 - Currently `READ` and `WRITE` of a node is possible.
