@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>b2d0ab73-8f42-4b3f-9415-ab542610a5f8</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="OPC Foundation\**" />
+    <Content Remove="OPC Foundation\**" />
+    <EmbeddedResource Remove="OPC Foundation\**" />
+    <None Remove="OPC Foundation\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="aasenv-with-no-id.aas.xml" />
+    <None Remove="Application.Config.xml" />
+    <None Remove="submodel.aas.xml" />
+    <None Remove="submodel.adt.xml" />
+    <None Remove="UANodeSet.aasx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="aasenv-with-no-id.aas.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Application.Config.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="submodel.aas.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="submodel.adt.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.DigitalTwins.Core" Version="1.2.2" />
+    <PackageReference Include="Azure.Identity" Version="1.4.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.2.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Symbols" Version="1.4.366.38" />
+    <PackageReference Include="System.IO.Packaging" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Views\UACL\" />
+    <Folder Include="wwwroot\lib\jstree\themes\default\" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,124 @@
+﻿@using UANodesetWebViewer.Models
+
+@model UACLModel
+
+@{
+    ViewData["Title"] = "OPC UA Cloud Library Upload";
+}
+<h1>@ViewData["Title"]</h1>
+
+<div class="row browser_top_container">
+    @using (Html.BeginForm("Upload", "UACL"))
+    {
+    <div class="browser_connect_selection_textbox">
+        <p>
+            You first need to register this application with the OPC UA Cloud Library, see TODO for details.<br />
+        </p>
+        <p>
+            UA Cloud Library instance Url (<b>required</b>)<br />
+            @Html.TextBox("instanceUrl", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            UA Cloud Library username (<b>required</b>)<br />
+            @Html.TextBox("clientId", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            UA Cloud Library password (<b>required</b>)<br />
+            @Html.TextBox("secret", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Please provide additional nodeset properties before uploading the nodeset file below:<br />
+        </p>
+        <p>
+            Title (<b>required</b>)<br />
+            @Html.TextBox("nodesettitle", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Version (<b>required</b>, Major.Minor.Revision notation, e.g. 1.0.0)<br />
+            @Html.TextBox("version", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            License (<b>required</b>, MIT, ApacheLicense20, or Custom)<br />
+            @Html.TextBox("license", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Copyright Text (<b>required</b>)<br />
+            @Html.TextBox("copyright", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Description (<b>required</b>)<br />
+            @Html.TextBox("description", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Address Space Name (<b>required</b>)<br />
+            @Html.TextBox("addressspacename", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Organisation Name (<b>required</b>)<br />
+            @Html.TextBox("orgname", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Address Space Description<br />
+            @Html.TextBox("addressspacedescription", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Address Space Icon Url<br />
+            @Html.TextBox("addressspaceiconurl", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Documentation Url<br />
+            @Html.TextBox("documentationurl", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Icon Url<br />
+            @Html.TextBox("iconurl", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            License Url<br />
+            @Html.TextBox("licenseurl", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Keywords (comma delimited, i.e. keyword1,keyword2,keyword3 etc.)<br />
+            @Html.TextBox("keywords", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Purchasing Information Url<br />
+            @Html.TextBox("purchasinginfo", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Release Notes Url<br />
+            @Html.TextBox("releasenotes", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Test Specification Url<br />
+            @Html.TextBox("testspecification", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Supported Locales (ISO notation, comma delimited, e.g. en-us,de-de)<br />
+            @Html.TextBox("locales", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Organisation Description<br />
+            @Html.TextBox("orgdescription", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Organisation Logo Url<br />
+            @Html.TextBox("orglogo", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Organisation Contact Email<br />
+            @Html.TextBox("orgcontact", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Organisation Website<br />
+            @Html.TextBox("orgwebsite", null, new { style = "width:100%;" })<br />
+        <p>
+            Upload the loaded nodeset file to the OPC UA Cloud Library (please note: only the loaded nodeset file is uploaded, not its dependent nodesets!)<br />
+            <input id="uploadButton" class="btn btn-primary btn_browser" type="submit" value="Upload">
+        <p />
+        <p>
+            <b>@Model.StatusMessage</b>
+        </p>
+    </div>
+    }
+ </div>

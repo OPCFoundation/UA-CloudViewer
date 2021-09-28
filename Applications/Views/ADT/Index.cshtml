@@ -1,0 +1,54 @@
+﻿@using UANodesetWebViewer.Models
+
+@model ADTModel
+
+@{
+    ViewData["Title"] = "Azure Digital Twins Service Upload";
+}
+<h1>@ViewData["Title"]</h1>
+
+<div class="row browser_top_container">
+    @using (Html.BeginForm("Upload", "ADT"))
+    {
+    <div class="browser_connect_selection_textbox">
+        <p>
+            You first need to register this application with Azure Digital Twins (ADT) service, see <a href="https://docs.microsoft.com/en-us/azure/digital-twins/how-to-create-app-registration" target="_blank" rel="noopener noreferrer">here</a>.<br />
+            You also need to create a secret as a client credential within your app registration.<br />
+            Also, ensure you add "Azure Digital Twins Data Owner" permissions to your app registration.<br />
+        </p>
+        <p>
+            ADT instance Url (format: https://YourADTInstanceName.api.wcus.digitaltwins.azure.net)<br />
+            @Html.TextBox("instanceUrl", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Active Directory ID (format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX)<br />
+            @Html.TextBox("tenantId", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Registered application ID (format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX)<br />
+            @Html.TextBox("clientId", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Secret you created for your app registration (found under "Client credentials")<br />
+            @Html.TextBox("secret", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            Upload the loaded nodeset files to ADT service<br />
+            <input id="uploadButton" class="btn btn-primary btn_browser" type="submit" value="Upload">
+        <p />
+        <p>
+            <b>@Model.StatusMessage</b>
+        </p>
+    </div>
+    }
+ </div>
+<div class="row browser_browse_disconnect_button mt-2">
+    <br />
+    Generate a Plattform Industrie 4.0 Asset Admin Shell from the ADT's DTDL file
+</div>
+<div class="row browser_browse_disconnect_button mt-2">
+    @using (Html.BeginForm("GenerateAAS", "ADT"))
+    {
+        <input id="generateAASButton" class="btn btn-primary btn_browser" type="submit" value="Generate AAS" />
+    }
+</div>

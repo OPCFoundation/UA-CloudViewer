@@ -1,0 +1,21 @@
+﻿@using UANodesetWebViewer.Models
+
+@{
+    ViewData["Title"] = "Open local nodeset files";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="FileUpload">
+    <div class="container-fluid browser_connect_container">
+        <div>
+            <input class="btn btn-primary" type="file" name="files" multiple>
+        </div>
+        <div>
+            <p/>
+        </div>
+        <div >
+            <input class="btn btn-primary" type="submit" value="Open">
+        </div>
+    </div>
+</form>
