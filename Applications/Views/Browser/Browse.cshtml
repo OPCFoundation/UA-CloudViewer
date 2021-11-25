@@ -90,18 +90,18 @@
             // Start/continue the connection
             async function establishSignalRConnection() {
                 try {
-                    await connection.start().ConfigureAwait(false);
+                    await connection.start();
                     console.log("connection to signalr hub successfull established");
                 } catch (err) {
                     console.warn("Error creating SignalR connection, retry in 5 seconds %o", err);
-                    setTimeout(async () => { await establishSignalRConnection().ConfigureAwait(false); }, 5000);
+                    setTimeout(async () => { await establishSignalRConnection(); }, 5000);
                 }
             };
 
-            connection.onclose(async () => { await establishSignalRConnection().ConfigureAwait(false); });
+            connection.onclose(async () => { await establishSignalRConnection(); });
 
             // Start the connection.
-            await establishSignalRConnection().ConfigureAwait(false);
+            await establishSignalRConnection();
         });
 
         function getRightLeftDiv(leftContent, rightContent) {

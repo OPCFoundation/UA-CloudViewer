@@ -1,1 +1,30 @@
-﻿<?xml version="1.0" encoding="utf-8"?><aasenv xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.admin-shell.io/aas/1/0 AAS.xsd http://www.admin-shell.io/IEC61360/1/0 IEC61360.xsd" xmlns="http://www.admin-shell.io/aas/1/0"><assetAdministrationShells><assetAdministrationShell><idShort>UAServer</idShort><category>CONSTANT</category><identification idType="URI">http://www.microsoft.com/aas/9175_7013_7091_9168</identification><assetRef><keys><key type="Asset" local="true" idType="URI">http://www.opcfoundation.org/assets/uaserver</key></keys></assetRef><submodelRefs><submodelRef><keys><key type="Submodel" local="true" idType="URI">http://www.microsoft.com/type/dtdl/stationcommandsdtdl</key></keys></submodelRef><submodelRef><keys><key type="Submodel" local="true" idType="URI">http://www.microsoft.com/type/dtdl/stationinstancedtdl</key></keys></submodelRef><submodelRef><keys><key type="Submodel" local="true" idType="URI">http://www.microsoft.com/type/dtdl/stationproductdtdl</key></keys></submodelRef><submodelRef><keys><key type="Submodel" local="true" idType="URI">http://www.microsoft.com/type/dtdl/stationtelemetrydtdl</key></keys></submodelRef></submodelRefs><conceptDictionaries /></assetAdministrationShell></assetAdministrationShells><assets><asset><idShort>UAServer</idShort><category /><identification idType="URI">http://www.opcfoundation.org/assets/uaserver</identification><kind>Instance</kind><assetIdentificationModelRef><keys /></assetIdentificationModelRef></asset></assets><submodels><submodel><idShort>DTDL</idShort><category>CONSTANT</category><identification idType="URI">http://www.microsoft.com/type/dtdl/stationcommandsdtdl</identification><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><submodelElements><submodelElement><submodelElementCollection><idShort>DigitalTwin</idShort><category /><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><value><submodelElement><file><idShort>DTDL_JSON</idShort><category /><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><mimeType>application/json</mimeType><value>/aasx/StationCommands.dtdl</value></file></submodelElement></value><ordered>false</ordered><allowDuplicates>false</allowDuplicates></submodelElementCollection></submodelElement></submodelElements></submodel><submodel><idShort>DTDL</idShort><category>CONSTANT</category><identification idType="URI">http://www.microsoft.com/type/dtdl/stationinstancedtdl</identification><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><submodelElements><submodelElement><submodelElementCollection><idShort>DigitalTwin</idShort><category /><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><value><submodelElement><file><idShort>DTDL_JSON</idShort><category /><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><mimeType>application/json</mimeType><value>/aasx/StationInstance.dtdl</value></file></submodelElement></value><ordered>false</ordered><allowDuplicates>false</allowDuplicates></submodelElementCollection></submodelElement></submodelElements></submodel><submodel><idShort>DTDL</idShort><category>CONSTANT</category><identification idType="URI">http://www.microsoft.com/type/dtdl/stationproductdtdl</identification><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><submodelElements><submodelElement><submodelElementCollection><idShort>DigitalTwin</idShort><category /><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><value><submodelElement><file><idShort>DTDL_JSON</idShort><category /><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><mimeType>application/json</mimeType><value>/aasx/StationProduct.dtdl</value></file></submodelElement></value><ordered>false</ordered><allowDuplicates>false</allowDuplicates></submodelElementCollection></submodelElement></submodelElements></submodel><submodel><idShort>DTDL</idShort><category>CONSTANT</category><identification idType="URI">http://www.microsoft.com/type/dtdl/stationtelemetrydtdl</identification><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><submodelElements><submodelElement><submodelElementCollection><idShort>DigitalTwin</idShort><category /><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><value><submodelElement><file><idShort>DTDL_JSON</idShort><category /><semanticId><keys /></semanticId><kind>Instance</kind><qualifier /><mimeType>application/json</mimeType><value>/aasx/StationTelemetry.dtdl</value></file></submodelElement></value><ordered>false</ordered><allowDuplicates>false</allowDuplicates></submodelElementCollection></submodelElement></submodelElements></submodel></submodels><conceptDescriptions /></aasenv>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<aasenv xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.admin-shell.io/aas/1/0 AAS.xsd http://www.admin-shell.io/IEC61360/1/0 IEC61360.xsd" xmlns="http://www.admin-shell.io/aas/1/0">
+  <assetAdministrationShells>
+    <assetAdministrationShell>
+      <idShort>UAServer</idShort>
+      <category>CONSTANT</category>
+      <identification idType="URI">http://www.microsoft.com/aas/9175_7013_7091_9168</identification>
+      <assetRef>
+        <keys>
+          <key type="Asset" local="true" idType="URI">http://www.opcfoundation.org/assets/uaserver</key>
+        </keys>
+      </assetRef>
+      <submodelRefs/>
+      <conceptDictionaries />
+    </assetAdministrationShell>
+  </assetAdministrationShells>
+  <assets>
+    <asset>
+      <idShort>UAServer</idShort>
+      <category />
+      <identification idType="URI">http://www.opcfoundation.org/assets/uaserver</identification>
+      <kind>Instance</kind>
+      <assetIdentificationModelRef>
+        <keys />
+      </assetIdentificationModelRef>
+    </asset>
+  </assets>
+  <submodels/>
+  <conceptDescriptions />
+</aasenv>

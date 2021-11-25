@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace UACloudLibrary
 {
@@ -14,16 +15,15 @@ namespace UACloudLibrary
     {
         public AddressSpace()
         {
-            ID = string.Empty;
             Title = string.Empty;
             Version = "1.0.0";
             License = AddressSpaceLicense.Custom;
             CopyrightText = string.Empty;
-            CreationTimeStamp = DateTime.UtcNow;
-            LastModification = DateTime.UtcNow;
+            CreationTime = DateTime.UtcNow;
+            LastModificationTime = DateTime.UtcNow;
             Contributor = new Organisation();
             Description = string.Empty;
-            Category = new AddresSpaceCategory();
+            Category = new AddressSpaceCategory();
             Nodeset = new AddressSpaceNodeset2();
             DocumentationUrl = null;
             IconUrl = null;
@@ -32,31 +32,37 @@ namespace UACloudLibrary
             PurchasingInformationUrl = null;
             ReleaseNotesUrl = null;
             TestSpecificationUrl = null;
-            SupportedLocales = null;
+            SupportedLocales = new string[0];
             NumberOfDownloads = 0;
-            AdditionalProperties = null;
+            AdditionalProperties = new Tuple<string, string>[0];
         }
 
-        public string ID { get; set; }
-
+        [Required]
         public string Title { get; set; }
 
+        [Required]
         public string Version { get; set; }
 
+        [Required]
         public AddressSpaceLicense License { get; set; }
 
+        [Required]
         public string CopyrightText { get; set; }
 
-        public DateTime CreationTimeStamp { get; set; }
+        public DateTime CreationTime { get; set; }
 
-        public DateTime LastModification { get; set; }
+        public DateTime LastModificationTime { get; set; }
 
+        [Required]
         public Organisation Contributor { get; set; }
 
+        [Required]
         public string Description { get; set; }
 
-        public AddresSpaceCategory Category { get; set; }
+        [Required]
+        public AddressSpaceCategory Category { get; set; }
 
+        [Required]
         public AddressSpaceNodeset2 Nodeset { get; set; }
 
         /// <summary>
@@ -87,23 +93,20 @@ namespace UACloudLibrary
         public Tuple<string, string>[] AdditionalProperties { get; set; }
     }
 
-
     public class Organisation
     {
         public Organisation()
         {
-            ID = string.Empty;
             Name = string.Empty;
             Description = null;
             LogoUrl = null;
             ContactEmail = null;
             Website = null;
-            CreationTimeStamp = DateTime.UtcNow;
-            LastModification = DateTime.UtcNow;
+            CreationTime = DateTime.UtcNow;
+            LastModificationTime = DateTime.UtcNow;
         }
 
-        public string ID { get; set; }
-
+        [Required]
         public string Name { get; set; }
 
         public string Description { get; set; }
@@ -114,52 +117,48 @@ namespace UACloudLibrary
 
         public Uri Website { get; set; }
 
-        public DateTime CreationTimeStamp { get; set; }
+        public DateTime CreationTime { get; set; }
 
-        public DateTime LastModification { get; set; }
+        public DateTime LastModificationTime { get; set; }
     }
 
-    public class AddresSpaceCategory
+    public class AddressSpaceCategory
     {
-        public AddresSpaceCategory()
+        public AddressSpaceCategory()
         {
-            ID = string.Empty;
             Name = string.Empty;
             Description = null;
             IconUrl = null;
-            CreationTimeStamp = DateTime.UtcNow;
-            LastModification = DateTime.UtcNow;
+            CreationTime = DateTime.UtcNow;
+            LastModificationTime = DateTime.UtcNow;
         }
 
-        public string ID { get; set; }
-
+        [Required]
         public string Name { get; set; }
 
         public string Description { get; set; }
 
         public Uri IconUrl { get; set; }
 
-        public DateTime CreationTimeStamp { get; set; }
+        public DateTime CreationTime { get; set; }
 
-        public DateTime LastModification { get; set; }
+        public DateTime LastModificationTime { get; set; }
     }
 
     public class AddressSpaceNodeset2
     {
         public AddressSpaceNodeset2()
         {
-            AddressSpaceID = string.Empty;
             NodesetXml = string.Empty;
-            CreationTimeStamp = DateTime.UtcNow;
-            LastModification = DateTime.UtcNow;
+            CreationTime = DateTime.UtcNow;
+            LastModificationTime = DateTime.UtcNow;
         }
 
-        public string AddressSpaceID { get; set; }
-
+        [Required]
         public string NodesetXml { get; set; }
 
-        public DateTime CreationTimeStamp { get; set; }
+        public DateTime CreationTime { get; set; }
 
-        public DateTime LastModification { get; set; }
+        public DateTime LastModificationTime { get; set; }
     }
 }

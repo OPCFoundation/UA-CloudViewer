@@ -243,26 +243,29 @@ namespace UANodesetWebViewer.Controllers
                     using (Stream stream = new FileStream(nodesetFile, FileMode.Open))
                     {
                         UANodeSet nodeSet = UANodeSet.Read(stream);
-                        foreach (string ns in nodeSet.NamespaceUris)
+                        if ((nodeSet.NamespaceUris != null ) && (nodeSet.NamespaceUris.Length > 0))
                         {
-                            string dependency = ns.Substring(7).TrimEnd('/').ToLower();
-                            dependency = dependency.Substring(dependency.IndexOf('/'));
-
-                            if (dependency.StartsWith("/"))
+                            foreach (string ns in nodeSet.NamespaceUris)
                             {
-                                dependency = dependency.Substring(1);
-                            }
+                                string dependency = ns.Substring(7).TrimEnd('/').ToLower();
+                                dependency = dependency.Substring(dependency.IndexOf('/'));
 
-                            if (dependency.StartsWith("ua"))
-                            {
-                                dependency = dependency.Substring(dependency.IndexOf('/') + 1);
-                            }
+                                if (dependency.StartsWith("/"))
+                                {
+                                    dependency = dependency.Substring(1);
+                                }
 
-                            dependency = dependency.Replace("/", "");
+                                if (dependency.StartsWith("ua"))
+                                {
+                                    dependency = dependency.Substring(dependency.IndexOf('/') + 1);
+                                }
 
-                            if (!dependencies.Contains(dependency))
-                            {
-                                dependencies.Add(dependency);
+                                dependency = dependency.Replace("/", "");
+
+                                if (!dependencies.Contains(dependency))
+                                {
+                                    dependencies.Add(dependency);
+                                }
                             }
                         }
                     }
@@ -276,13 +279,19 @@ namespace UANodesetWebViewer.Controllers
                     loadedNodesets.Add(filename);
                 }
 
+                // trim the additional nodeset filename formatting
                 for (int i = 0; i < loadedNodesets.Count; i++)
                 {
                     loadedNodesets[i] = Path.GetFileNameWithoutExtension(loadedNodesets[i]).ToLower();
 
-                    if (loadedNodesets[i].Contains(".ua."))
+                    if (loadedNodesets[i].StartsWith("opc."))
                     {
-                        loadedNodesets[i] = loadedNodesets[i].Substring(loadedNodesets[i].IndexOf(".ua.") + 4);
+                        loadedNodesets[i] = loadedNodesets[i].Substring(4);
+                    }
+
+                    if (loadedNodesets[i].StartsWith("ua."))
+                    {
+                        loadedNodesets[i] = loadedNodesets[i].Substring(3);
                     }
 
                     if (loadedNodesets[i].EndsWith(".nodeset2"))

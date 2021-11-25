@@ -9,18 +9,19 @@ Additional features of the UA Nodeset Web Viewer include the ability to run in a
 
 ## Usage
 
-Open the project in Microsoft Visual Studio and then hit F5 to run.
+Docker containers are automatically built. Simply run the app via:
+
 
 ###  Upload 
 
 ![Start](Docs/Start.png)
 
-- Upload your XML NodeSet file. (NOTE: Dependent NodeSet files need to be uploaded together or in the required order.)
+- Open your OPC UA NodeSet file. (NOTE: Dependent NodeSet files need to be opened together.)
 
 
 ### Browsing
 
 ![Browsing](Docs/Sample.png)
 
-- One can browse and interact with the model.
+- You can browse and interact with the model.
 - Currently `READ` and `WRITE` of a node is possible.

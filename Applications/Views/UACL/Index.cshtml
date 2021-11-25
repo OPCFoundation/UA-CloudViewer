@@ -12,11 +12,14 @@
     {
     <div class="browser_connect_selection_textbox">
         <p>
-            You first need to register this application with the OPC UA Cloud Library, see TODO for details.<br />
+            Upload the loaded nodeset file to the UA Cloud Library<br />
+        </p>
+        <p>
+            <b>@Model.StatusMessage</b>
         </p>
         <p>
             UA Cloud Library instance Url (<b>required</b>)<br />
-            @Html.TextBox("instanceUrl", null, new { style = "width:100%;" })<br />
+            @Html.TextBox("instanceUrl", "https://uacloudlibrary.opcfoundation.org", new { style = "width:100%;" })<br />
         <p />
         <p>
             UA Cloud Library username (<b>required</b>)<br />
@@ -113,12 +116,13 @@
             Organisation Website<br />
             @Html.TextBox("orgwebsite", null, new { style = "width:100%;" })<br />
         <p>
+        <p>
+            Overwrite existing nodeset file?<br />
+            @Html.CheckBox("overwrite", false)<br />
+        <p>
             Upload the loaded nodeset file to the OPC UA Cloud Library (please note: only the loaded nodeset file is uploaded, not its dependent nodesets!)<br />
             <input id="uploadButton" class="btn btn-primary btn_browser" type="submit" value="Upload">
         <p />
-        <p>
-            <b>@Model.StatusMessage</b>
-        </p>
     </div>
     }
  </div>

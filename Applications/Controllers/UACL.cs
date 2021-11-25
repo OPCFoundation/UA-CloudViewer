@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using System.Xml;
 using UACloudLibrary;
 using UANodesetWebViewer.Models;
 
@@ -46,7 +48,8 @@ namespace UANodesetWebViewer.Controllers
             string orgdescription,
             string orglogo,
             string orgcontact,
-            string orgwebsite)
+            string orgwebsite,
+            bool overwrite)
         {
             UACLModel uaclModel = new UACLModel
             {
@@ -63,14 +66,10 @@ namespace UANodesetWebViewer.Controllers
                 }
 
                 // call the UA Cloud Library REST endpoint for info model upload
-                if (string.IsNullOrWhiteSpace(instanceUrl) || !Uri.IsWellFormedUriString(instanceUrl, UriKind.Absolute))
+                if (string.IsNullOrWhiteSpace(instanceUrl) || !Uri.IsWellFormedUriString(instanceUrl.Trim(), UriKind.Absolute))
                 {
                     throw new ArgumentException("Invalid UA Cloud Library instance Url entered!");
                 }
-                WebClient webClient = new WebClient
-                {
-                    BaseAddress = instanceUrl
-                };
 
                 if (string.IsNullOrWhiteSpace(clientId))
                 {
@@ -105,7 +104,6 @@ namespace UANodesetWebViewer.Controllers
                 }
 
                 uaAddressSpace.Version = new Version(version).ToString();
-
                 if (!string.IsNullOrWhiteSpace(copyright))
                 {
                     uaAddressSpace.CopyrightText = copyright;
@@ -215,28 +213,41 @@ namespace UANodesetWebViewer.Controllers
                 string nodesetFileName = BrowserController._nodeSetFilename[BrowserController._nodeSetFilename.Count - 1];
                 uaAddressSpace.Nodeset.NodesetXml = System.IO.File.ReadAllText(nodesetFileName);
 
+                instanceUrl = instanceUrl.Trim();
+                if (!instanceUrl.EndsWith('/'))
+                {
+                    instanceUrl += '/';
+                }
+                WebClient webClient = new WebClient
+                {
+                    BaseAddress = instanceUrl
+                };
+
                 webClient.Headers.Add("Content-Type", "application/json");
-                webClient.Headers.Add("Authorization", "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
+                webClient.Headers.Add("Authorization", "basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
+
+                string address = webClient.BaseAddress + "InfoModel/upload";
+                if (overwrite)
+                {
+                    address += "?overwrite=true";
+                }
+
                 string body = JsonConvert.SerializeObject(uaAddressSpace);
-                string response = webClient.UploadString(webClient.BaseAddress + "InfoModel/upload", "PUT", body);
+                string response = webClient.UploadString(address, "PUT", body);
                 webClient.Dispose();
 
-                AddressSpace returnedAddressSpace = JsonConvert.DeserializeObject<AddressSpace>(response);
-                if (!string.IsNullOrEmpty(returnedAddressSpace.Nodeset.AddressSpaceID))
-                {
-                    uaclModel.StatusMessage = "Upload successful!";
-                    return View("Index", uaclModel);
-                }
-                else
-                {
-                    uaclModel.StatusMessage = response;
-                    return View("Error", uaclModel);
-                }
+                uaclModel.StatusMessage = response;
+                return View("Index", uaclModel);
             }
             catch (Exception ex)
             {
+                if ((ex is WebException) && (((WebException)ex).Response != null))
+                {
+                    uaclModel.StatusMessage = new StreamReader(((WebException)ex).Response.GetResponseStream()).ReadToEnd();
+                    return View("Index", uaclModel);
+                }
                 uaclModel.StatusMessage = ex.Message;
-                return View("Error", uaclModel);
+                return View("Index", uaclModel);
             }
         }
     }

@@ -23,11 +23,14 @@ namespace UANodesetWebViewer
                 using (Stream stream = new FileStream(nodesetFile, FileMode.Open))
                 {
                     UANodeSet nodeSet = UANodeSet.Read(stream);
-                    foreach (string ns in nodeSet.NamespaceUris)
+                    if ((nodeSet.NamespaceUris != null) && (nodeSet.NamespaceUris.Length > 0))
                     {
-                        if (!namespaces.Contains(ns))
+                        foreach (string ns in nodeSet.NamespaceUris)
                         {
-                            namespaces.Add(ns);
+                            if (!namespaces.Contains(ns))
+                            {
+                                namespaces.Add(ns);
+                            }
                         }
                     }
 
@@ -75,9 +78,12 @@ namespace UANodesetWebViewer
                     Debug.WriteLine(i + ": " + Server.NamespaceUris.GetString((uint)i));
                 }
                 Debug.WriteLine("\r\nNodeset Namespaces:");
-                for (int i = 0; i < nodeSet.NamespaceUris.Length; i++)
+                if ((nodeSet.NamespaceUris != null) && (nodeSet.NamespaceUris.Length > 0))
                 {
-                    Debug.WriteLine(i + ": " + nodeSet.NamespaceUris[i]);
+                    for (int i = 0; i < nodeSet.NamespaceUris.Length; i++)
+                    {
+                        Debug.WriteLine(i + ": " + nodeSet.NamespaceUris[i]);
+                    }
                 }
 
                 for (int i = 0; i < predefinedNodes.Count; i++)
@@ -91,7 +97,7 @@ namespace UANodesetWebViewer
                     else
                     {
                         BaseObjectTypeState objectType = predefinedNodes[i] as BaseObjectTypeState;
-                        if (objectType != null)
+                        if ((objectType != null) && (((BaseObjectTypeState)predefinedNodes[i]).SuperTypeId != null))
                         {
                             Debug.WriteLine("Object Type: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier + " " + "Supertype: ns=" + ((BaseObjectTypeState)predefinedNodes[i]).SuperTypeId.NamespaceIndex + ";i=" + ((BaseObjectTypeState)predefinedNodes[i]).SuperTypeId.Identifier);
                         }
