@@ -10,7 +10,9 @@ Additional features of the UA Nodeset Web Viewer include the ability to run in a
 ## Usage
 
 Docker containers are automatically built. Simply run the app via:
+
 docker run -p80:80 ghcr.io/digitaltwinconsortium/uanodesetwebviewer:main
+
 And then point your browser to http://localhost
 
 ###  Loading Nodeset Files 
@@ -18,6 +20,7 @@ And then point your browser to http://localhost
 ![Start](Docs/Start.png)
 
 Open your OPC UA nodeset file.
+
 Please note: Dependent nodeset files need to be opened, too, but it will tell you which ones!
 
 
