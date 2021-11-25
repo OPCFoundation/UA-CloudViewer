@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-using System.Xml;
 using UACloudLibrary;
 using UANodesetWebViewer.Models;
 
@@ -20,6 +20,14 @@ namespace UANodesetWebViewer.Controllers
                 StatusMessage = ""
             };
 
+            if (BrowserController._nodeSetFilename.Count > 0)
+            {
+                ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename, BrowserController._nodeSetFilename[0]);
+            }
+            else
+            {
+                ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename);
+            }
             return View("Index", uaclModel);
         }
 
@@ -29,6 +37,7 @@ namespace UANodesetWebViewer.Controllers
             string clientId,
             string secret,
             string nodesettitle,
+            string nodesetfile,
             string version,
             string license,
             string copyright,
@@ -210,8 +219,7 @@ namespace UANodesetWebViewer.Controllers
                     uaAddressSpace.Contributor.Website = new Uri(orgwebsite);
                 }
 
-                string nodesetFileName = BrowserController._nodeSetFilename[BrowserController._nodeSetFilename.Count - 1];
-                uaAddressSpace.Nodeset.NodesetXml = System.IO.File.ReadAllText(nodesetFileName);
+                uaAddressSpace.Nodeset.NodesetXml = System.IO.File.ReadAllText(nodesetfile);
 
                 instanceUrl = instanceUrl.Trim();
                 if (!instanceUrl.EndsWith('/'))
@@ -237,6 +245,15 @@ namespace UANodesetWebViewer.Controllers
                 webClient.Dispose();
 
                 uaclModel.StatusMessage = response;
+
+                if (BrowserController._nodeSetFilename.Count > 0)
+                {
+                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename, BrowserController._nodeSetFilename[0]);
+                }
+                else
+                {
+                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename);
+                }
                 return View("Index", uaclModel);
             }
             catch (Exception ex)
@@ -244,9 +261,20 @@ namespace UANodesetWebViewer.Controllers
                 if ((ex is WebException) && (((WebException)ex).Response != null))
                 {
                     uaclModel.StatusMessage = new StreamReader(((WebException)ex).Response.GetResponseStream()).ReadToEnd();
-                    return View("Index", uaclModel);
                 }
-                uaclModel.StatusMessage = ex.Message;
+                else
+                {
+                    uaclModel.StatusMessage = ex.Message;
+                }
+
+                if (BrowserController._nodeSetFilename.Count > 0)
+                {
+                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename, BrowserController._nodeSetFilename[0]);
+                }
+                else
+                {
+                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename);
+                }
                 return View("Index", uaclModel);
             }
         }
