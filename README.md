@@ -13,16 +13,21 @@ Docker containers are automatically built. Simply run the app via:
 docker run -p80:80 ghcr.io/digitaltwinconsortium/uanodesetwebviewer:main
 And then point your browser to http://localhost
 
-###  Upload 
+###  Loading Nodeset Files 
 
 ![Start](Docs/Start.png)
 
-- Open your OPC UA NodeSet file. (NOTE: Dependent NodeSet files need to be opened together.)
+Open your OPC UA nodeset file.
+Please note: Dependent nodeset files need to be opened, too, but it will tell you which ones!
 
 
-### Browsing
+### Browsing Nodeset Files
 
 ![Browsing](Docs/Sample.png)
 
-- You can browse and interact with the model.
-- Currently `READ` and `WRITE` of a node is possible.
+You can browse and interact with the model.
+Currently `READ` and `WRITE` of a node is possible.
+
+### Uploading Nodeset Files to the UA Cloud Library
+
+On the UA Cloud Library tab, fill in your username and password you used when registering with the UA Cloud Library as well as metadata describing your nodeset file.
