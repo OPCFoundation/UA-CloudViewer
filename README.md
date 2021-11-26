@@ -13,7 +13,9 @@ Docker containers are automatically built. Simply run the app via:
 
 docker run -p80:80 ghcr.io/digitaltwinconsortium/uanodesetwebviewer:main
 
-And then point your browser to http://localhost
+And then point your browser to http://localhost.
+
+If you don't have Docker yet, you can download it for free from [here](https://www.docker.com/products/docker-desktop).
 
 ###  Loading Nodeset Files 
 
