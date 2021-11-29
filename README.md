@@ -38,4 +38,7 @@ Currently `READ` and `WRITE` of a node is possible.
 
 On the UA Cloud Library tab, fill in your username and password you used when registering with the UA Cloud Library as well as metadata describing your nodeset file.
 
+## Build Status
+
+[![Docker Build](https://github.com/digitaltwinconsortium/UANodesetWebViewer/actions/workflows/docker-build.yml/badge.svg)](https://github.com/digitaltwinconsortium/UANodesetWebViewer/actions/workflows/docker-build.yml)
 
