@@ -23,10 +23,9 @@ If you don't have Docker yet, you can download it for free from [here](https://w
 
 Open your OPC UA nodeset file.
 
-Please note: Referenced nodeset files need to be opened, too, but it will tell you which ones!
+Please note: Referenced nodeset files need to be opened, too, but it will tell you which ones or you can set a checkbox to automatically download referenced nodeset files from the UA Cloud Library.
 
-You can also open OPC UA nodeset files directly from the Ua Cloud Library or set a checkbox to automatically download referenced nodeset files from the UA Cloud Library.
-
+You can also open OPC UA nodeset files directly from the UA Cloud Library.
 
 ### Browsing Nodeset Files
 
