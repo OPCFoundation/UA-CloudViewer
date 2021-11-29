@@ -1,4 +1,6 @@
 ﻿
+using Microsoft.AspNetCore.Mvc.Rendering;
+
 namespace UANodesetWebViewer.Models
 {
     /// <summary>
@@ -20,6 +22,11 @@ namespace UANodesetWebViewer.Models
         /// The OPC UA server port it is running on
         /// </summary>
         public string ServerPort { get; set; }
+
+        /// <summary>
+        /// List of nodesetIds that can be selected
+        /// </summary>
+        public SelectList NodesetIDs { get; set; }
 
         /// <summary>
         /// Error text for the error view.
