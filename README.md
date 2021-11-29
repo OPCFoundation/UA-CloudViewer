@@ -23,7 +23,9 @@ If you don't have Docker yet, you can download it for free from [here](https://w
 
 Open your OPC UA nodeset file.
 
-Please note: Dependent nodeset files need to be opened, too, but it will tell you which ones!
+Please note: Referenced nodeset files need to be opened, too, but it will tell you which ones!
+
+You can also open OPC UA nodeset files directly from the Ua Cloud Library or set a checkbox to automatically download referenced nodeset files from the UA Cloud Library.
 
 
 ### Browsing Nodeset Files
@@ -37,5 +39,4 @@ Currently `READ` and `WRITE` of a node is possible.
 
 On the UA Cloud Library tab, fill in your username and password you used when registering with the UA Cloud Library as well as metadata describing your nodeset file.
 
-Pro Tip: If you get an error saying that a dependent nodeset file can't be found, but the name of the dependent nodeset file is almost the same as the name of the nodeset file you are trying to load, simply change the nodeset filename to the name it is looking for. Sometimes the nodeset filename and the namespace name don't match exactly and the tool needs a little help to match them!
 
