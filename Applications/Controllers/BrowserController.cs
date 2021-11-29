@@ -1,6 +1,7 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Opc.Ua;
@@ -13,12 +14,14 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Packaging;
+using System.Net;
 using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Xml;
 using System.Xml.Serialization;
+using UACloudLibrary;
 using UANodesetWebViewer.Models;
 
 namespace UANodesetWebViewer.Controllers
@@ -29,9 +32,14 @@ namespace UANodesetWebViewer.Controllers
 
     public class BrowserController : Controller
     {
-        public static List<string> _nodeSetFilename = new List<string>();
+        public static List<string> _nodeSetFilenames = new List<string>();
 
         private IHubContext<StatusHub> _hubContext;
+
+        private static WebClient _client = new WebClient();
+
+        private static Dictionary<string, string> _nodesetsInCloudLibrary = new Dictionary<string, string>();
+
         private static ApplicationInstance _application = new ApplicationInstance();
 
         public BrowserController(IHubContext<StatusHub> hubContext)
@@ -59,8 +67,11 @@ namespace UANodesetWebViewer.Controllers
 
         public ActionResult Index()
         {
-            OpcSessionModel sessionModel = new OpcSessionModel();
-            sessionModel.SessionId = HttpContext.Session.Id;
+            OpcSessionModel sessionModel = new OpcSessionModel
+            {
+                SessionId = HttpContext.Session.Id,
+                NodesetIDs = new SelectList(new List<string>())
+            };
 
             OpcSessionCacheData entry = null;
             if (OpcSessionHelper.Instance.OpcSessionCache.TryGetValue(HttpContext.Session.Id, out entry))
@@ -77,6 +88,39 @@ namespace UANodesetWebViewer.Controllers
             return View("Index", sessionModel);
         }
 
+        [HttpPost]
+        public ActionResult Login(string instanceUrl, string clientId, string secret)
+        {
+            OpcSessionModel sessionModel = new OpcSessionModel
+            {
+                SessionId = HttpContext.Session.Id,
+                NodesetIDs = new SelectList(new List<string>())
+            };
+
+            _client.Headers.Add("Authorization", "basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
+            _client.Headers.Add("Content-Type", "application/json");
+
+            if (!instanceUrl.EndsWith('/'))
+            {
+                instanceUrl += '/';
+            }
+            _client.BaseAddress = instanceUrl;
+
+            string address = instanceUrl + "infomodel/namespaces";
+            string response = _client.DownloadString(address);
+            string[] identifiers = JsonConvert.DeserializeObject<string[]>(response);
+
+            _nodesetsInCloudLibrary.Clear();
+            foreach (string nodeset in identifiers)
+            {
+                string[] tuple = nodeset.Split(",");
+                _nodesetsInCloudLibrary.Add(tuple[0], tuple[1]);
+            }
+
+            sessionModel.NodesetIDs = new SelectList(_nodesetsInCloudLibrary.Keys);
+
+            return View("Index", sessionModel);
+        }
 
         public ActionResult Privacy()
         {
@@ -109,7 +153,7 @@ namespace UANodesetWebViewer.Controllers
                         aasEnv.AssetAdministrationShells.AssetAdministrationShell.SubmodelRefs.Clear();
                         aasEnv.Submodels.Clear();
 
-                        foreach(string filename in _nodeSetFilename)
+                        foreach(string filename in _nodeSetFilenames)
                         {
                             string submodelPath = Path.Combine(Directory.GetCurrentDirectory(), "submodel.aas.xml");
                             using (StringReader reader2 = new StringReader(System.IO.File.ReadAllText(submodelPath)))
@@ -150,10 +194,10 @@ namespace UANodesetWebViewer.Controllers
                     origin.CreateRelationship(spec.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aas-spec");
 
                     // add nodeset files
-                    for(int i = 0; i < _nodeSetFilename.Count; i++)
+                    for(int i = 0; i < _nodeSetFilenames.Count; i++)
                     {
-                        PackagePart supplementalDoc = package.CreatePart(new Uri("/aasx/" + Path.GetFileNameWithoutExtension(_nodeSetFilename[i]), UriKind.Relative), MediaTypeNames.Text.Xml);
-                        string documentPath = Path.Combine(Directory.GetCurrentDirectory(), _nodeSetFilename[i]);
+                        PackagePart supplementalDoc = package.CreatePart(new Uri("/aasx/" + Path.GetFileNameWithoutExtension(_nodeSetFilenames[i]), UriKind.Relative), MediaTypeNames.Text.Xml);
+                        string documentPath = Path.Combine(Directory.GetCurrentDirectory(), _nodeSetFilenames[i]);
                         using (FileStream fileStream = new FileStream(documentPath, FileMode.Open, FileAccess.Read))
                         {
                             CopyStream(fileStream, supplementalDoc.GetStream());
@@ -191,7 +235,8 @@ namespace UANodesetWebViewer.Controllers
         {
             OpcSessionModel sessionModel = new OpcSessionModel
             {
-                ErrorMessage = HttpUtility.HtmlDecode(errorMessage)
+                ErrorMessage = HttpUtility.HtmlDecode(errorMessage),
+                NodesetIDs = new SelectList(new List<string>())
             };
 
             UpdateStatus($"Error Occured: {sessionModel.ErrorMessage}");
@@ -199,8 +244,37 @@ namespace UANodesetWebViewer.Controllers
             return View("Error", sessionModel);
         }
 
+        public async Task<ActionResult> CloudLibrayFileOpen(string nodesetfile)
+        {
+            OpcSessionModel sessionModel = new OpcSessionModel
+            {
+                ServerIP = "localhost",
+                ServerPort = "4840",
+            };
+
+            string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_nodesetsInCloudLibrary[nodesetfile]);
+            string response = _client.DownloadString(address);
+            AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response);
+
+            // store the file on the webserver
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "NodeSets", "nodeset2.xml");
+            System.IO.File.WriteAllText(filePath, addressSpace.Nodeset.NodesetXml);
+            _nodeSetFilenames.Add(filePath);
+
+            string error = ValidateNamespacesAndModels(true);
+            if (!string.IsNullOrEmpty(error))
+            {
+                sessionModel.ErrorMessage = error;
+                return View("Error", sessionModel);
+            }
+
+            await StartClientAndServer(sessionModel).ConfigureAwait(false);
+
+            return View("Browse", sessionModel);
+        }
+
         [HttpPost]
-        public async Task<ActionResult> FileUpload(IFormFile[] files)
+        public async Task<ActionResult> LocalFileOpen(IFormFile[] files, bool autodownloadreferences)
         {
             OpcSessionModel sessionModel = new OpcSessionModel
             {
@@ -215,7 +289,7 @@ namespace UANodesetWebViewer.Controllers
                     throw new ArgumentException("No files specified!");
                 }
 
-                _nodeSetFilename.Clear();
+                _nodeSetFilenames.Clear();
                 foreach (IFormFile file in files)
                 {
                     if ((file.Length == 0) || (file.ContentType != "text/xml"))
@@ -233,97 +307,17 @@ namespace UANodesetWebViewer.Controllers
                         await file.CopyToAsync(stream).ConfigureAwait(false);
                     }
 
-                    _nodeSetFilename.Add(filePath);
+                    _nodeSetFilenames.Add(filePath);
                 }
 
-                // Validate namespaces listed in each file and make sure all dependent nodeset files are present and loaded in the right order
-                List<string> dependencies = new List<string>();
-                foreach (string nodesetFile in _nodeSetFilename)
+                string error = ValidateNamespacesAndModels(autodownloadreferences);
+                if (!string.IsNullOrEmpty(error))
                 {
-                    using (Stream stream = new FileStream(nodesetFile, FileMode.Open))
-                    {
-                        UANodeSet nodeSet = UANodeSet.Read(stream);
-                        if ((nodeSet.NamespaceUris != null ) && (nodeSet.NamespaceUris.Length > 0))
-                        {
-                            foreach (string ns in nodeSet.NamespaceUris)
-                            {
-                                string dependency = ns.Substring(7).TrimEnd('/').ToLower();
-                                dependency = dependency.Substring(dependency.IndexOf('/'));
-
-                                if (dependency.StartsWith("/"))
-                                {
-                                    dependency = dependency.Substring(1);
-                                }
-
-                                if (dependency.StartsWith("ua"))
-                                {
-                                    dependency = dependency.Substring(dependency.IndexOf('/') + 1);
-                                }
-
-                                dependency = dependency.Replace("/", "");
-
-                                if (!dependencies.Contains(dependency))
-                                {
-                                    dependencies.Add(dependency);
-                                }
-                            }
-                        }
-                    }
+                    sessionModel.ErrorMessage = error;
+                    return View("Error", sessionModel);
                 }
 
-                // try to deduct the UA namespace name from the nodeset filename
-                // TODO: This does not work for "nonstandard" filenames (i.e. other than something.ua.something.nodest2.xml) and therefore needs improvement!
-                List<string> loadedNodesets = new List<string>();
-                foreach (string filename in _nodeSetFilename)
-                {
-                    loadedNodesets.Add(filename);
-                }
-
-                // trim the additional nodeset filename formatting
-                for (int i = 0; i < loadedNodesets.Count; i++)
-                {
-                    loadedNodesets[i] = Path.GetFileNameWithoutExtension(loadedNodesets[i]).ToLower();
-
-                    if (loadedNodesets[i].StartsWith("opc."))
-                    {
-                        loadedNodesets[i] = loadedNodesets[i].Substring(4);
-                    }
-
-                    if (loadedNodesets[i].StartsWith("ua."))
-                    {
-                        loadedNodesets[i] = loadedNodesets[i].Substring(3);
-                    }
-
-                    if (loadedNodesets[i].EndsWith(".nodeset2"))
-                    {
-                        loadedNodesets[i] = loadedNodesets[i].Substring(0, loadedNodesets[i].IndexOf(".nodeset2"));
-                    }
-                }
-
-                for (int i = 0; i < dependencies.Count; i++)
-                {
-                    if (!loadedNodesets.Contains(dependencies[i]))
-                    {
-                        sessionModel.ErrorMessage = "Dependent nodeset file '" + dependencies[i] + "' missing in loaded nodsets, please add it!";
-                        return View("Error", sessionModel);
-                    }
-                }
-
-                // (re-)start the UA server
-                if (_application.Server != null)
-                {
-                    _application.Stop();
-                }
-
-                await StartServerAsync().ConfigureAwait(false);
-
-                // start the UA client
-                Session session = null;
-                string endpointURL = "opc.tcp://" + sessionModel.ServerIP + ":" + sessionModel.ServerPort + "/";
-                session = await OpcSessionHelper.Instance.GetSessionAsync(_application.ApplicationConfiguration, HttpContext.Session.Id, endpointURL, true).ConfigureAwait(false);
-                UpdateStatus("Connected");
-
-                HttpContext.Session.SetString("EndpointUrl", endpointURL);
+                await StartClientAndServer(sessionModel).ConfigureAwait(false);
 
                 return View("Browse", sessionModel);
             }
@@ -336,6 +330,137 @@ namespace UANodesetWebViewer.Controllers
 
                 return View("Error", sessionModel);
             }
+        }
+
+        private async Task StartClientAndServer(OpcSessionModel sessionModel)
+        {
+            // (re-)start the UA server
+            if (_application.Server != null)
+            {
+                _application.Stop();
+            }
+
+            await StartServerAsync().ConfigureAwait(false);
+
+            // start the UA client
+            Session session = null;
+            string endpointURL = "opc.tcp://" + sessionModel.ServerIP + ":" + sessionModel.ServerPort + "/";
+            session = await OpcSessionHelper.Instance.GetSessionAsync(_application.ApplicationConfiguration, HttpContext.Session.Id, endpointURL, true).ConfigureAwait(false);
+            UpdateStatus("Connected");
+
+            HttpContext.Session.SetString("EndpointUrl", endpointURL);
+        }
+
+        private string ValidateNamespacesAndModels(bool autodownloadreferences)
+        {
+            // Collect all models as well as all required/referenced model namespace URIs listed in each file
+            List<string> models = new List<string>();
+            List<string> modelreferences = new List<string>();
+            foreach (string nodesetFile in _nodeSetFilenames)
+            {
+                using (Stream stream = new FileStream(nodesetFile, FileMode.Open))
+                {
+                    UANodeSet nodeSet = UANodeSet.Read(stream);
+
+                    // validate namespace URIs
+                    if ((nodeSet.NamespaceUris != null) && (nodeSet.NamespaceUris.Length > 0))
+                    {
+                        foreach (string ns in nodeSet.NamespaceUris)
+                        {
+                            if (string.IsNullOrEmpty(ns) || !Uri.IsWellFormedUriString(ns, UriKind.Absolute))
+                            {
+                                return "Nodeset file " + nodesetFile + " contains an invalid Namespace URI: \"" + ns + "\"";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return "'NamespaceUris' entry missing in " + nodesetFile + ". Please add it!";
+                    }
+
+                    // validate model URIs
+                    if ((nodeSet.Models != null) && (nodeSet.Models.Length > 0))
+                    {
+                        foreach (ModelTableEntry model in nodeSet.Models)
+                        {
+                            if (model != null)
+                            {
+                                if (Uri.IsWellFormedUriString(model.ModelUri, UriKind.Absolute))
+                                {
+                                    // ignore the default namespace which is always present and don't add duplicates
+                                    if ((model.ModelUri != "http://opcfoundation.org/UA/") && !models.Contains(model.ModelUri))
+                                    {
+                                        models.Add(model.ModelUri);
+                                    }
+                                }
+                                else
+                                {
+                                    return "Nodeset file " + nodesetFile + " contains an invalid Model Namespace URI: \"" + model.ModelUri + "\"";
+                                }
+
+                                if ((model.RequiredModel != null) && (model.RequiredModel.Length > 0))
+                                {
+                                    foreach (ModelTableEntry requiredModel in model.RequiredModel)
+                                    {
+                                        if (requiredModel != null)
+                                        {
+                                            if (Uri.IsWellFormedUriString(requiredModel.ModelUri, UriKind.Absolute))
+                                            {
+                                                // ignore the default namespace which is always required and don't add duplicates
+                                                if ((requiredModel.ModelUri != "http://opcfoundation.org/UA/") && !modelreferences.Contains(requiredModel.ModelUri))
+                                                {
+                                                    modelreferences.Add(requiredModel.ModelUri);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                return "Nodeset file " + nodesetFile + " contains an invalid referenced Model Namespace URI: \"" + requiredModel.ModelUri + "\"";
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return "'Model' entry missing in " + nodesetFile + ". Please add it!";
+                    }
+                }
+            }
+
+            // now check if we have all references for each model we want to load
+            foreach (string modelreference in modelreferences)
+            {
+                if (!models.Contains(modelreference))
+                {
+                    if (!autodownloadreferences)
+                    {
+                        return "Referenced OPC UA model " + modelreference + " is missing from selected list of nodeset files, please add the corresponding nodeset file to the list of loaded files!";
+                    }
+                    else
+                    {
+                        try
+                        {
+                            // try to auto-download the missing references from the UA Cloud Library
+                            string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_nodesetsInCloudLibrary[modelreference]);
+                            string response = _client.DownloadString(address);
+                            AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response);
+
+                            // store the file on the webserver
+                            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "NodeSets", addressSpace.Category.Name + ".nodeset2.xml");
+                            System.IO.File.WriteAllText(filePath, addressSpace.Nodeset.NodesetXml);
+                            _nodeSetFilenames.Add(filePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            return "Could not download referenced nodeset " + modelreference + ": " + ex.Message;
+                        }
+                    }
+                }
+            }
+
+            return string.Empty; // no error
         }
 
         private async Task StartServerAsync()
@@ -378,15 +503,18 @@ namespace UANodesetWebViewer.Controllers
                 Trace.TraceError(ex.Message);
             }
 
-            OpcSessionModel sessionModel = new OpcSessionModel();
-            sessionModel.SessionId = HttpContext.Session.Id;
-
             if (_application.Server != null)
             {
                 _application.Stop();
             }
 
             UpdateStatus("Disconnected");
+
+            OpcSessionModel sessionModel = new OpcSessionModel
+            {
+                SessionId = HttpContext.Session.Id,
+                NodesetIDs = new SelectList(new List<string>())
+            };
 
             return View("Index", sessionModel);
         }
