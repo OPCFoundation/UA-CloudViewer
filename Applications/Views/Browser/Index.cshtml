@@ -1,21 +1,78 @@
 ﻿@using UANodesetWebViewer.Models
 
 @{
-    ViewData["Title"] = "Open local nodeset files";
+    ViewData["Title"] = "Open nodeset files";
 }
 
 <h1>@ViewData["Title"]</h1>
 
-<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="FileUpload">
+<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="LocalFileOpen">
     <div class="container-fluid browser_connect_container">
+        <div>
+            <p>
+                Open local nodeset files:
+            </p>
+        </div>
         <div>
             <input class="btn btn-primary" type="file" name="files" multiple>
         </div>
         <div>
-            <p/>
+            <p />
         </div>
-        <div >
+        <div>
             <input class="btn btn-primary" type="submit" value="Open">
+        </div>
+    </div>
+ </form>
+<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="CloudLibrayFileOpen">
+    <div class="container-fluid browser_connect_container">
+        <br/>
+        <hr />
+        <br />
+        <div>
+            <p>
+                Open nodeset files from UA Cloud Library (please login below first):
+            </p>
+        </div>
+        <div>
+            @Html.DropDownList("nodesetfile", @ViewBag.Nodesetids, null, new { @class = "form-control"})
+        </div>
+        <div>
+            <p />
+        </div>
+        <div>
+            <input class="btn btn-primary" type="submit" value="Open">
+        </div>
+    </div>
+</form>
+<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="Login">
+    <div class="container-fluid browser_connect_container">
+        <br />
+        <hr />
+        <br />
+        <div>
+            <p>
+                Automatically download and open referenced nodeset files from UA Cloud Library?<br />
+                @Html.CheckBox("autodownloadreferences", true)<br />
+            </p>
+        </div>
+        <div>
+            <p>
+                UA Cloud Library instance Url<br />
+                @Html.TextBox("instanceUrl", "https://uacloudlibrary.opcfoundation.org", new { style = "width:100%;" })<br />
+            <p />
+            <p>
+                UA Cloud Library username<br />
+                @Html.TextBox("clientId", null, new { style = "width:100%;" })<br />
+            <p />
+            <p>
+                UA Cloud Library password<br />
+                @Html.Password("secret", null, new { style = "width:100%;" })<br />
+            <p />
+            <div>
+                <input class="btn btn-primary" type="submit" value="Login">
+            </div>
+     
         </div>
     </div>
 </form>

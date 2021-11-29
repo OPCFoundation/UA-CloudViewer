@@ -18,7 +18,7 @@ namespace UANodesetWebViewer
             SystemContext.NodeIdFactory = this;
 
             List<string> namespaces = new List<string>();
-            foreach (string nodesetFile in BrowserController._nodeSetFilename)
+            foreach (string nodesetFile in BrowserController._nodeSetFilenames)
             {
                 using (Stream stream = new FileStream(nodesetFile, FileMode.Open))
                 {
@@ -51,9 +51,9 @@ namespace UANodesetWebViewer
                     externalReferences[ObjectIds.ObjectsFolder] = references = new List<IReference>();
                 }
 
-                if (BrowserController._nodeSetFilename.Count > 0)
+                if (BrowserController._nodeSetFilenames.Count > 0)
                 {
-                    foreach (string nodesetFile in BrowserController._nodeSetFilename)
+                    foreach (string nodesetFile in BrowserController._nodeSetFilenames)
                     {
                         ImportNodeset2Xml(externalReferences, nodesetFile);
                     }

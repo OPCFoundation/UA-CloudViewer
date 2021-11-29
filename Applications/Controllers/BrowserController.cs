@@ -1,6 +1,7 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Opc.Ua;
@@ -13,12 +14,14 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Packaging;
+using System.Net;
 using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Xml;
 using System.Xml.Serialization;
+using UACloudLibrary;
 using UANodesetWebViewer.Models;
 
 namespace UANodesetWebViewer.Controllers
@@ -29,14 +32,18 @@ namespace UANodesetWebViewer.Controllers
 
     public class BrowserController : Controller
     {
-        public static List<string> _nodeSetFilename = new List<string>();
+        public static List<string> _nodeSetFilenames = new List<string>();
 
         private IHubContext<StatusHub> _hubContext;
+
+        private WebClient _client;
+        
         private static ApplicationInstance _application = new ApplicationInstance();
 
         public BrowserController(IHubContext<StatusHub> hubContext)
         {
              _hubContext = hubContext;
+            _client = new WebClient();
         }
 
 
@@ -73,10 +80,62 @@ namespace UANodesetWebViewer.Controllers
                 return View("Browse", sessionModel);
             }
 
+            ViewBag.Nodesetids = new SelectList(new List<string>());
+
             UpdateStatus("Additional Information Required");
             return View("Index", sessionModel);
         }
 
+        [HttpPost]
+        public ActionResult Login(string instanceUrl, string clientId, string secret)
+        {
+            _client.Headers.Add("Authorization", "basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
+            _client.Headers.Add("Content-Type", "application/json");
+            
+            if (!instanceUrl.EndsWith('/'))
+            {
+                instanceUrl += '/';
+            }
+            _client.BaseAddress = instanceUrl;
+
+            string[] keywords = { "*" }; // return everything
+            string address = instanceUrl + "infomodel/find";
+            string response = _client.UploadString(address, "PUT", JsonConvert.SerializeObject(keywords));
+            List<string> identifiers = new List<string>(JsonConvert.DeserializeObject<string[]>(response));
+
+
+            address = instanceUrl + "infomodel/namespaces";
+            response = _client.DownloadString(address);
+            string[] identifiers2 = JsonConvert.DeserializeObject<string[]>(response);
+
+            for (int i = 0; i < identifiers.Count; i++)
+            {
+                for (int j = 0; j < identifiers2.Length; j++)
+                {
+                    if (identifiers2[j].Contains(identifiers[i]))
+                    {
+                        identifiers.RemoveAt(i);
+                        i--;
+                        break;
+                    }
+                }
+            }
+
+            List<string> nodesetnames = new List<string>();
+            foreach (string identifier in identifiers)
+            {
+                address = instanceUrl + "infomodel/download/" + Uri.EscapeDataString(identifier);
+                response = _client.DownloadString(address);
+                AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response);
+                nodesetnames.Add(addressSpace.Title);
+            }
+
+            nodesetnames.Sort();
+            ViewBag.Nodesetids = new SelectList(nodesetnames);
+
+            OpcSessionModel sessionModel = new OpcSessionModel();
+            return View("Index", sessionModel);
+        }
 
         public ActionResult Privacy()
         {
@@ -109,7 +168,7 @@ namespace UANodesetWebViewer.Controllers
                         aasEnv.AssetAdministrationShells.AssetAdministrationShell.SubmodelRefs.Clear();
                         aasEnv.Submodels.Clear();
 
-                        foreach(string filename in _nodeSetFilename)
+                        foreach(string filename in _nodeSetFilenames)
                         {
                             string submodelPath = Path.Combine(Directory.GetCurrentDirectory(), "submodel.aas.xml");
                             using (StringReader reader2 = new StringReader(System.IO.File.ReadAllText(submodelPath)))
@@ -150,10 +209,10 @@ namespace UANodesetWebViewer.Controllers
                     origin.CreateRelationship(spec.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aas-spec");
 
                     // add nodeset files
-                    for(int i = 0; i < _nodeSetFilename.Count; i++)
+                    for(int i = 0; i < _nodeSetFilenames.Count; i++)
                     {
-                        PackagePart supplementalDoc = package.CreatePart(new Uri("/aasx/" + Path.GetFileNameWithoutExtension(_nodeSetFilename[i]), UriKind.Relative), MediaTypeNames.Text.Xml);
-                        string documentPath = Path.Combine(Directory.GetCurrentDirectory(), _nodeSetFilename[i]);
+                        PackagePart supplementalDoc = package.CreatePart(new Uri("/aasx/" + Path.GetFileNameWithoutExtension(_nodeSetFilenames[i]), UriKind.Relative), MediaTypeNames.Text.Xml);
+                        string documentPath = Path.Combine(Directory.GetCurrentDirectory(), _nodeSetFilenames[i]);
                         using (FileStream fileStream = new FileStream(documentPath, FileMode.Open, FileAccess.Read))
                         {
                             CopyStream(fileStream, supplementalDoc.GetStream());
@@ -199,8 +258,28 @@ namespace UANodesetWebViewer.Controllers
             return View("Error", sessionModel);
         }
 
+        public ActionResult CloudLibrayFileOpen(string nodesetfile)
+        {
+            OpcSessionModel sessionModel = new OpcSessionModel
+            {
+                ServerIP = "localhost",
+                ServerPort = "4840",
+            };
+
+            string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(nodesetfile);
+            string response = _client.DownloadString(address);
+            AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response);
+
+            // store the file on the webserver
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "NodeSets", "nodeset2.xml");
+            System.IO.File.WriteAllText(filePath, addressSpace.Nodeset.NodesetXml);
+            _nodeSetFilenames.Add(filePath);
+
+            return View("Browse", sessionModel);
+        }
+
         [HttpPost]
-        public async Task<ActionResult> FileUpload(IFormFile[] files)
+        public async Task<ActionResult> LocalFileOpen(IFormFile[] files)
         {
             OpcSessionModel sessionModel = new OpcSessionModel
             {
@@ -215,7 +294,7 @@ namespace UANodesetWebViewer.Controllers
                     throw new ArgumentException("No files specified!");
                 }
 
-                _nodeSetFilename.Clear();
+                _nodeSetFilenames.Clear();
                 foreach (IFormFile file in files)
                 {
                     if ((file.Length == 0) || (file.ContentType != "text/xml"))
@@ -233,12 +312,12 @@ namespace UANodesetWebViewer.Controllers
                         await file.CopyToAsync(stream).ConfigureAwait(false);
                     }
 
-                    _nodeSetFilename.Add(filePath);
+                    _nodeSetFilenames.Add(filePath);
                 }
 
-                // Validate namespaces listed in each file and make sure all dependent nodeset files are present and loaded in the right order
+                // Validate namespaces listed in each file and make sure all referenced nodeset files are present and loaded in the right order
                 List<string> dependencies = new List<string>();
-                foreach (string nodesetFile in _nodeSetFilename)
+                foreach (string nodesetFile in _nodeSetFilenames)
                 {
                     using (Stream stream = new FileStream(nodesetFile, FileMode.Open))
                     {
@@ -274,7 +353,7 @@ namespace UANodesetWebViewer.Controllers
                 // try to deduct the UA namespace name from the nodeset filename
                 // TODO: This does not work for "nonstandard" filenames (i.e. other than something.ua.something.nodest2.xml) and therefore needs improvement!
                 List<string> loadedNodesets = new List<string>();
-                foreach (string filename in _nodeSetFilename)
+                foreach (string filename in _nodeSetFilenames)
                 {
                     loadedNodesets.Add(filename);
                 }
@@ -304,7 +383,7 @@ namespace UANodesetWebViewer.Controllers
                 {
                     if (!loadedNodesets.Contains(dependencies[i]))
                     {
-                        sessionModel.ErrorMessage = "Dependent nodeset file '" + dependencies[i] + "' missing in loaded nodsets, please add it!";
+                        sessionModel.ErrorMessage = "Referenced nodeset file '" + dependencies[i] + "' missing in loaded nodsets, please add it!";
                         return View("Error", sessionModel);
                     }
                 }

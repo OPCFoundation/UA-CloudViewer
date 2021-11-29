@@ -20,13 +20,13 @@ namespace UANodesetWebViewer.Controllers
                 StatusMessage = ""
             };
 
-            if (BrowserController._nodeSetFilename.Count > 0)
+            if (BrowserController._nodeSetFilenames.Count > 0)
             {
-                ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename, BrowserController._nodeSetFilename[0]);
+                ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilenames, BrowserController._nodeSetFilenames[0]);
             }
             else
             {
-                ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename);
+                ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilenames);
             }
             return View("Index", uaclModel);
         }
@@ -69,7 +69,7 @@ namespace UANodesetWebViewer.Controllers
 
             try
             {
-                if (BrowserController._nodeSetFilename.Count < 1)
+                if (BrowserController._nodeSetFilenames.Count < 1)
                 {
                     throw new Exception("No nodeset file is currently loaded!");
                 }
@@ -246,13 +246,13 @@ namespace UANodesetWebViewer.Controllers
 
                 uaclModel.StatusMessage = response;
 
-                if (BrowserController._nodeSetFilename.Count > 0)
+                if (BrowserController._nodeSetFilenames.Count > 0)
                 {
-                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename, BrowserController._nodeSetFilename[0]);
+                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilenames, BrowserController._nodeSetFilenames[0]);
                 }
                 else
                 {
-                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename);
+                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilenames);
                 }
                 return View("Index", uaclModel);
             }
@@ -267,13 +267,13 @@ namespace UANodesetWebViewer.Controllers
                     uaclModel.StatusMessage = ex.Message;
                 }
 
-                if (BrowserController._nodeSetFilename.Count > 0)
+                if (BrowserController._nodeSetFilenames.Count > 0)
                 {
-                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename, BrowserController._nodeSetFilename[0]);
+                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilenames, BrowserController._nodeSetFilenames[0]);
                 }
                 else
                 {
-                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilename);
+                    ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilenames);
                 }
                 return View("Index", uaclModel);
             }
