@@ -53,9 +53,15 @@ namespace UANodesetWebViewer
 
                 if (BrowserController._nodeSetFilenames.Count > 0)
                 {
-                    foreach (string nodesetFile in BrowserController._nodeSetFilenames)
+                    // we need as many passes as we have nodesetfiles to make sure all references can be resolved
+                    for (int i = 0; i < BrowserController._nodeSetFilenames.Count; i++)
                     {
-                        ImportNodeset2Xml(externalReferences, nodesetFile);
+                        foreach (string nodesetFile in BrowserController._nodeSetFilenames)
+                        {
+                            ImportNodeset2Xml(externalReferences, nodesetFile, i);
+                        }
+
+                        Console.WriteLine("Import nodes pass " + i.ToString() + " completed!");
                     }
                 }
 
@@ -63,7 +69,7 @@ namespace UANodesetWebViewer
             }
         }
 
-        private void ImportNodeset2Xml(IDictionary<NodeId, IList<IReference>> externalReferences, string resourcepath)
+        private void ImportNodeset2Xml(IDictionary<NodeId, IList<IReference>> externalReferences, string resourcepath, int pass)
         {
             using (Stream stream = new FileStream(resourcepath, FileMode.Open))
             {
@@ -71,80 +77,43 @@ namespace UANodesetWebViewer
 
                 NodeStateCollection predefinedNodes = new NodeStateCollection();
                 nodeSet.Import(SystemContext, predefinedNodes);
-
-                Debug.WriteLine("");
-
-                Debug.WriteLine(" Server Namespaces:");
-                for(int i = 0; i < Server.NamespaceUris.Count; i++)
-                {
-                    Debug.WriteLine(i + ": " + Server.NamespaceUris.GetString((uint)i));
-                }
-                Debug.WriteLine("\r\nNodeset Namespaces:");
-                if ((nodeSet.NamespaceUris != null) && (nodeSet.NamespaceUris.Length > 0))
-                {
-                    for (int i = 0; i < nodeSet.NamespaceUris.Length; i++)
-                    {
-                        Debug.WriteLine(i + ": " + nodeSet.NamespaceUris[i]);
-                    }
-                }
-
-                Debug.WriteLine("");
-
+# if DEBUG
+                DebugOutput(nodeSet, predefinedNodes);
+#endif
                 for (int i = 0; i < predefinedNodes.Count; i++)
                 {
-                    // debug output
-                    BaseInstanceState instance = predefinedNodes[i] as BaseInstanceState;
-                    if (instance != null)
-                    {
-                        Debug.WriteLine("Instance: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier + " " + "TypeDefinition: ns=" + ((BaseInstanceState)predefinedNodes[i]).TypeDefinitionId.NamespaceIndex + ";i=" + ((BaseInstanceState)predefinedNodes[i]).TypeDefinitionId.Identifier);
-                    }
-                    else
-                    {
-                        BaseObjectTypeState objectType = predefinedNodes[i] as BaseObjectTypeState;
-                        if ((objectType != null) && (((BaseObjectTypeState)predefinedNodes[i]).SuperTypeId != null))
-                        {
-                            Debug.WriteLine("Object Type: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier + " " + "Supertype: ns=" + ((BaseObjectTypeState)predefinedNodes[i]).SuperTypeId.NamespaceIndex + ";i=" + ((BaseObjectTypeState)predefinedNodes[i]).SuperTypeId.Identifier);
-                        }
-                        else
-                        {
-                            BaseObjectState objectState = predefinedNodes[i] as BaseObjectState;
-                            if (objectState != null)
-                            {
-                                Debug.WriteLine("Object: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier + " " + "TypeDefinition: ns=" + ((BaseObjectState)predefinedNodes[i]).TypeDefinitionId.NamespaceIndex + ";i=" + ((BaseObjectState)predefinedNodes[i]).TypeDefinitionId.Identifier);
-                            }
-                            else
-                            {
-                                ReferenceTypeState reference = predefinedNodes[i] as ReferenceTypeState;
-                                if (objectState != null)
-                                {
-                                    Debug.WriteLine("Reference Type: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier + " " + "Supertype: ns=" + ((ReferenceTypeState)predefinedNodes[i]).SuperTypeId.NamespaceIndex + ";i=" + ((ReferenceTypeState)predefinedNodes[i]).SuperTypeId.Identifier);
-                                }
-                                else
-                                {
-                                    DataTypeState datatype = predefinedNodes[i] as DataTypeState;
-                                    if (datatype != null)
-                                    {
-                                        Debug.WriteLine("Data Type: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier + " " + "Supertype: ns=" + ((DataTypeState)predefinedNodes[i]).SuperTypeId.NamespaceIndex + ";i=" + ((DataTypeState)predefinedNodes[i]).SuperTypeId.Identifier);
-                                    }
-                                    else
-                                    {
-                                        Debug.WriteLine("Unknown: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
                     try
                     {
                         AddPredefinedNode(SystemContext, predefinedNodes[i]);
                     }
                     catch (Exception ex)
                     {
-                        throw new Exception("Importing node ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier + " (" + predefinedNodes[i].DisplayName + ") failed with error: " + ex.Message);
+                        Console.WriteLine("Pass " + pass.ToString() + ": Importing node ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier + " (" + predefinedNodes[i].DisplayName + ") failed with error: " + ex.Message);
                     }
                 }
             }
+        }
+
+        void DebugOutput(UANodeSet nodeSet, NodeStateCollection predefinedNodes)
+        {
+            Debug.WriteLine("");
+            Debug.WriteLine("Server Namespaces:");
+            for (int i = 0; i < Server.NamespaceUris.Count; i++)
+            {
+                Debug.WriteLine(i + ": " + Server.NamespaceUris.GetString((uint)i));
+            }
+
+            Debug.WriteLine("");
+            Debug.WriteLine("Nodeset Namespaces:");
+            if ((nodeSet.NamespaceUris != null) && (nodeSet.NamespaceUris.Length > 0))
+            {
+                for (int i = 0; i < nodeSet.NamespaceUris.Length; i++)
+                {
+                    Debug.WriteLine(i + ": " + nodeSet.NamespaceUris[i]);
+                }
+            }
+
+            Debug.WriteLine("");
         }
     }
 }
