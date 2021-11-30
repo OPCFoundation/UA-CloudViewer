@@ -72,6 +72,8 @@ namespace UANodesetWebViewer
                 NodeStateCollection predefinedNodes = new NodeStateCollection();
                 nodeSet.Import(SystemContext, predefinedNodes);
 
+                Debug.WriteLine("");
+
                 Debug.WriteLine(" Server Namespaces:");
                 for(int i = 0; i < Server.NamespaceUris.Count; i++)
                 {
@@ -85,6 +87,8 @@ namespace UANodesetWebViewer
                         Debug.WriteLine(i + ": " + nodeSet.NamespaceUris[i]);
                     }
                 }
+
+                Debug.WriteLine("");
 
                 for (int i = 0; i < predefinedNodes.Count; i++)
                 {
@@ -117,7 +121,15 @@ namespace UANodesetWebViewer
                                 }
                                 else
                                 {
-                                    Debug.WriteLine("Unknown: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier);
+                                    DataTypeState datatype = predefinedNodes[i] as DataTypeState;
+                                    if (datatype != null)
+                                    {
+                                        Debug.WriteLine("Data Type: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier + " " + "Supertype: ns=" + ((DataTypeState)predefinedNodes[i]).SuperTypeId.NamespaceIndex + ";i=" + ((DataTypeState)predefinedNodes[i]).SuperTypeId.Identifier);
+                                    }
+                                    else
+                                    {
+                                        Debug.WriteLine("Unknown: ns=" + predefinedNodes[i].NodeId.NamespaceIndex + ";i=" + predefinedNodes[i].NodeId.Identifier);
+                                    }
                                 }
                             }
                         }

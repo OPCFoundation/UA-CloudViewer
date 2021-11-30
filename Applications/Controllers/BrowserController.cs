@@ -97,6 +97,7 @@ namespace UANodesetWebViewer.Controllers
                 NodesetIDs = new SelectList(new List<string>())
             };
 
+            _client.Headers.Remove("Authorization");
             _client.Headers.Add("Authorization", "basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
             _client.Headers.Add("Content-Type", "application/json");
 
