@@ -38,7 +38,9 @@ namespace UANodesetWebViewer.Controllers
 
         private static WebClient _client = new WebClient();
 
-        private static Dictionary<string, string> _nodesetsInCloudLibrary = new Dictionary<string, string>();
+        private static Dictionary<string, string> _namespacesInCloudLibrary = new Dictionary<string, string>();
+
+        private static Dictionary<string, string> _namesInCloudLibrary = new Dictionary<string, string>();
 
         private static ApplicationInstance _application = new ApplicationInstance();
 
@@ -107,18 +109,34 @@ namespace UANodesetWebViewer.Controllers
             }
             _client.BaseAddress = instanceUrl;
 
+            // get namespaces
             string address = instanceUrl + "infomodel/namespaces";
             string response = _client.DownloadString(address);
             string[] identifiers = JsonConvert.DeserializeObject<string[]>(response);
 
-            _nodesetsInCloudLibrary.Clear();
+            _namespacesInCloudLibrary.Clear();
             foreach (string nodeset in identifiers)
             {
                 string[] tuple = nodeset.Split(",");
-                _nodesetsInCloudLibrary.Add(tuple[0], tuple[1]);
+                _namespacesInCloudLibrary.Add(tuple[0], tuple[1]);
             }
 
-            sessionModel.NodesetIDs = new SelectList(_nodesetsInCloudLibrary.Keys);
+            // get names
+            address = instanceUrl + "infomodel/names";
+            response = _client.DownloadString(address);
+            string[] names = JsonConvert.DeserializeObject<string[]>(response);
+
+            List<string> sortedNames = new List<string>(names);
+            sortedNames.Sort();
+
+            _namesInCloudLibrary.Clear();
+            foreach (string name in sortedNames)
+            {
+                string[] tuple = name.Split(",");
+                _namesInCloudLibrary.Add(tuple[0], tuple[1]);
+            }
+
+            sessionModel.NodesetIDs = new SelectList(_namesInCloudLibrary.Keys);
 
             return View("Index", sessionModel);
         }
@@ -253,7 +271,7 @@ namespace UANodesetWebViewer.Controllers
                 ServerPort = "4840",
             };
 
-            string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_nodesetsInCloudLibrary[nodesetfile]);
+            string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_namesInCloudLibrary[nodesetfile]);
             string response = _client.DownloadString(address);
             AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response);
 
@@ -444,7 +462,7 @@ namespace UANodesetWebViewer.Controllers
                         try
                         {
                             // try to auto-download the missing references from the UA Cloud Library
-                            string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_nodesetsInCloudLibrary[modelreference]);
+                            string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_namespacesInCloudLibrary[modelreference]);
                             string response = _client.DownloadString(address);
                             AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response);
 
