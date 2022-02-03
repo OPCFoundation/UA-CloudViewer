@@ -69,7 +69,7 @@ namespace UANodesetWebViewer.Controllers
                 else
                 {
                     adtModel.StatusMessage = response.GetRawResponse().ReasonPhrase;
-                    return View("Error", adtModel);
+                    return View("Index", adtModel);
                 }
             }
             catch (Exception ex)
@@ -78,7 +78,7 @@ namespace UANodesetWebViewer.Controllers
                 Environment.SetEnvironmentVariable("AZURE_CLIENT_SECRET", "");
 
                 adtModel.StatusMessage = ex.Message;
-                return View("Error", adtModel);
+                return View("Index", adtModel);
             }
         }
 
@@ -169,7 +169,7 @@ namespace UANodesetWebViewer.Controllers
                     StatusMessage = HttpUtility.HtmlDecode(ex.Message)
                 };
 
-                return View("Error", model);
+                return View("Index", model);
             }
         }
 

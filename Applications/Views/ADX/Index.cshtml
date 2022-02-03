@@ -1,24 +1,26 @@
 ﻿@using UANodesetWebViewer.Models
 
-@model ADTModel
+@model ADXModel
 
 @{
-    ViewData["Title"] = "Azure Digital Twins Upload";
+    ViewData["Title"] = "Azure Data Explorer Upload";
 }
 <h1>@ViewData["Title"]</h1>
 
 <div class="row browser_top_container">
-    @using (Html.BeginForm("Upload", "ADT"))
+    @using (Html.BeginForm("Upload", "ADX"))
     {
     <div class="browser_connect_selection_textbox">
         <p>
-            You first need to register this application with Azure Digital Twins (ADT) service, see <a href="https://docs.microsoft.com/en-us/azure/digital-twins/how-to-create-app-registration" target="_blank" rel="noopener noreferrer">here</a>.<br />
-            You also need to create a secret as a client credential within your app registration.<br />
-            Also, ensure you add "Azure Digital Twins Data Owner" permissions to your app registration.<br />
+            You first need to register this application with Azure Data Explorer (ADX), see <a href="https://docs.microsoft.com/en-us/azure/data-explorer/provision-azure-ad-app" target="_blank" rel="noopener noreferrer">here</a>.<br />
         </p>
         <p>
-            ADT instance Url (format: https://YourADTInstanceName.api.wcus.digitaltwins.azure.net)<br />
+            ADX instance Url (format: https://YourADXInstanceName.YourADXInstanceRegion.kusto.windows.net)<br />
             @Html.TextBox("instanceUrl", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            ADX database name<br />
+            @Html.TextBox("databaseName", null, new { style = "width:100%;" })<br />
         <p />
         <p>
             Azure Subscription Tenant ID (format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX)<br />
@@ -33,7 +35,7 @@
             @Html.Password("secret", null, new { style = "width:100%;" })<br />
         <p />
         <p>
-            Upload the loaded nodeset files to ADT<br />
+            Upload the loaded nodeset files to ADX<br />
             <input id="uploadButton" class="btn btn-primary btn_browser" type="submit" value="Upload">
         <p />
         <p>
@@ -42,13 +44,3 @@
     </div>
     }
  </div>
-<div class="row browser_browse_disconnect_button mt-2">
-    <br />
-    Generate a Plattform Industrie 4.0 Asset Admin Shell from the ADT's DTDL file
-</div>
-<div class="row browser_browse_disconnect_button mt-2">
-    @using (Html.BeginForm("GenerateAAS", "ADT"))
-    {
-        <input id="generateAASButton" class="btn btn-primary btn_browser" type="submit" value="Generate AAS" />
-    }
-</div>

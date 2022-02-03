@@ -11,6 +11,9 @@ namespace UANodesetWebViewer
 {
     class DTDL
     {
+        public static Dictionary<string, Tuple<string, string, string>> _nodeList = new Dictionary<string, Tuple<string, string, string>>();
+        public static string _nodesetNamespaceURI = string.Empty;
+
         private static Dictionary<string, string> _map = new Dictionary<string, string>();
         private static List<Tuple<DtdlInterface, string, string>> _interfaceList = new List<Tuple<DtdlInterface, string, string>>();
         private static List<Tuple<DtdlContents, string>> _contentsList = new List<Tuple<DtdlContents, string>>();
@@ -61,6 +64,8 @@ namespace UANodesetWebViewer
             _map.Clear();
             _interfaceList.Clear();
             _contentsList.Clear();
+            _nodeList.Clear();
+            _nodesetNamespaceURI = nodeSet.NamespaceUris[0];
 
             CreateSchemaMap();
 
@@ -72,7 +77,22 @@ namespace UANodesetWebViewer
                 {
                     if (uaNode.BrowseName.ToString() == "InputArguments")
                     {
-                        // TODO: Support input arguments nodes (for commands)
+                        continue;
+                    }
+
+                    // check if this node is part of the model
+                    bool isPartOfModel = false;
+                    foreach (Reference reference in variable.References)
+                    {
+                        if (reference.ReferenceType == "HasModellingRule")
+                        {
+                            isPartOfModel = true;
+                            break;
+                        }
+                    }
+                    if (isPartOfModel)
+                    {
+                        // ignore this node
                         continue;
                     }
 
@@ -89,12 +109,44 @@ namespace UANodesetWebViewer
                         _contentsList.Add(newTuple);
                     }
 
+                    Tuple<string, string, string> newNodeTuple;
+                    if (variable.DisplayName.Length > 0)
+                    {
+                        newNodeTuple = new Tuple<string, string, string>(variable.DisplayName[0].Value, GetDtdlDataType(variable.DataType.ToString()), variable.ParentNodeId?? "");
+                    }
+                    else
+                    {
+                        newNodeTuple = new Tuple<string, string, string>(variable.NodeId.ToString(), GetDtdlDataType(variable.DataType.ToString()), variable.ParentNodeId?? "");
+                    }
+
+                    string key = nodeSet.NamespaceUris[0] + "#" + variable.NodeId.ToString().Substring(variable.NodeId.ToString().IndexOf(';') + 1);
+                    if (!_nodeList.ContainsKey(key))
+                    {
+                        _nodeList.Add(key, newNodeTuple);
+                    }
+
                     continue;
                 }
 
                 UAMethod method = uaNode as UAMethod;
                 if (method != null)
                 {
+                    // check if this node is part of the model
+                    bool isPartOfModel = false;
+                    foreach(Reference reference in method.References)
+                    {
+                        if (reference.ReferenceType == "HasModellingRule")
+                        {
+                            isPartOfModel = true;
+                            break;
+                        }
+                    }
+                    if (isPartOfModel)
+                    {
+                        // ignore this node
+                        continue;
+                    }
+
                     DtdlContents dtdlCommand = new DtdlContents
                     {
                         Type = "Command",
@@ -107,12 +159,44 @@ namespace UANodesetWebViewer
                         _contentsList.Add(newTuple);
                     }
 
+                    Tuple<string, string, string> newNodeTuple;
+                    if (method.DisplayName.Length > 0)
+                    {
+                        newNodeTuple = new Tuple<string, string, string>(method.DisplayName[0].Value, "command", method.ParentNodeId?? "");
+                    }
+                    else
+                    {
+                        newNodeTuple = new Tuple<string, string, string>(method.NodeId.ToString(), "command", method.ParentNodeId?? "");
+                    }
+
+                    string key = nodeSet.NamespaceUris[0] + "#" + method.NodeId.ToString().Substring(method.NodeId.ToString().IndexOf(';') + 1);
+                    if (!_nodeList.ContainsKey(key))
+                    {
+                        _nodeList.Add(key, newNodeTuple);
+                    }
+
                     continue;
                 }
 
                 UAObject uaObject = uaNode as UAObject;
                 if (uaObject != null)
                 {
+                    // check if this node is part of the model
+                    bool isPartOfModel = false;
+                    foreach (Reference reference in uaObject.References)
+                    {
+                        if (reference.ReferenceType == "HasModellingRule")
+                        {
+                            isPartOfModel = true;
+                            break;
+                        }
+                    }
+                    if (isPartOfModel)
+                    {
+                        // ignore this node
+                        continue;
+                    }
+
                     DtdlInterface dtdlInterface = new DtdlInterface
                     {
                         Id = "dtmi:" + Regex.Replace(uaNode.BrowseName.ToString().Trim(), "[^A-Za-z]+", "") + ";1",
@@ -125,6 +209,22 @@ namespace UANodesetWebViewer
                     if (!_interfaceList.Contains(newTuple))
                     {
                         _interfaceList.Add(newTuple);
+                    }
+
+                    Tuple<string, string, string> newNodeTuple;
+                    if (uaObject.DisplayName.Length > 0)
+                    {
+                        newNodeTuple = new Tuple<string, string, string>(uaObject.DisplayName[0].Value, "object", uaObject.ParentNodeId?? "");
+                    }
+                    else
+                    {
+                        newNodeTuple = new Tuple<string, string, string>(uaObject.NodeId.ToString(), "object", uaObject.ParentNodeId?? "");
+                    }
+
+                    string key = nodeSet.NamespaceUris[0] + "#" + uaObject.NodeId.ToString().Substring(uaObject.NodeId.ToString().IndexOf(';') + 1);
+                    if (!_nodeList.ContainsKey(key))
+                    {
+                        _nodeList.Add(key, newNodeTuple);
                     }
 
                     continue;
