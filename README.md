@@ -14,7 +14,7 @@ Additional features of the **UANodesetWebViewer** include the ability to run in 
 
 Docker containers are automatically built. Simply run the app via:
 
-`docker run -p80:80 ghcr.io/digitaltwinconsortium/uanodesetwebviewer:main`
+`docker run -p 80:80 ghcr.io/digitaltwinconsortium/uanodesetwebviewer:main`
 
 And then point your browser to <http://localhost>.
 
