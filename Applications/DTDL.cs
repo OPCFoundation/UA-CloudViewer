@@ -110,9 +110,9 @@ namespace UANodesetWebViewer
                     }
 
                     Tuple<string, string, string> newNodeTuple;
-                    if (variable.DisplayName.Length > 0)
+                    if (variable.BrowseName.Length > 0)
                     {
-                        newNodeTuple = new Tuple<string, string, string>(variable.DisplayName[0].Value, GetDtdlDataType(variable.DataType.ToString()), variable.ParentNodeId?? "");
+                        newNodeTuple = new Tuple<string, string, string>(variable.BrowseName, GetDtdlDataType(variable.DataType.ToString()), variable.ParentNodeId?? "");
                     }
                     else
                     {
@@ -160,9 +160,9 @@ namespace UANodesetWebViewer
                     }
 
                     Tuple<string, string, string> newNodeTuple;
-                    if (method.DisplayName.Length > 0)
+                    if (method.BrowseName.Length > 0)
                     {
-                        newNodeTuple = new Tuple<string, string, string>(method.DisplayName[0].Value, "command", method.ParentNodeId?? "");
+                        newNodeTuple = new Tuple<string, string, string>(method.BrowseName, "command", method.ParentNodeId?? "");
                     }
                     else
                     {
@@ -212,9 +212,9 @@ namespace UANodesetWebViewer
                     }
 
                     Tuple<string, string, string> newNodeTuple;
-                    if (uaObject.DisplayName.Length > 0)
+                    if (uaObject.BrowseName.Length > 0)
                     {
-                        newNodeTuple = new Tuple<string, string, string>(uaObject.DisplayName[0].Value, "object", uaObject.ParentNodeId?? "");
+                        newNodeTuple = new Tuple<string, string, string>(uaObject.BrowseName, "object", uaObject.ParentNodeId?? "");
                     }
                     else
                     {
