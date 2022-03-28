@@ -843,37 +843,28 @@ namespace UANodesetWebViewer.Controllers
 
                     Session session = await OpcSessionHelper.Instance.GetSessionAsync(_application.ApplicationConfiguration, HttpContext.Session.Id, HttpContext.Session.GetString("EndpointUrl")).ConfigureAwait(false);
                     ResponseHeader responseHeader = session.Read(null, 0, TimestampsToReturn.Both, nodesToRead, out values, out diagnosticInfos);
-                    string value = "";
+                    
                     string actionResult;
-                    if (values.Count > 0 && values[0].Value != null)
+                    if (values.Count > 0)
                     {
-                        if (values[0].WrappedValue.ToString().Length > 40)
-                        {
-                            value = values[0].WrappedValue.ToString().Substring(0, 40);
-                            value += "...";
-                        }
-                        else
-                        {
-                            value = values[0].WrappedValue.ToString();
-                        }
-
-                        actionResult = $"{{ \"value\": \"{value}\", \"status\": \"{values[0].StatusCode}\", \"sourceTimestamp\": \"{values[0].SourceTimestamp}\", \"serverTimestamp\": \"{values[0].ServerTimestamp}\" }}";
+                        actionResult = $"{{ \"value\": \"{values[0]}\", \"status\": \"{values[0].StatusCode}\", \"sourceTimestamp\": \"{values[0].SourceTimestamp}\", \"serverTimestamp\": \"{values[0].ServerTimestamp}\" }}";
                     }
                     else
                     {
                         actionResult = string.Empty;
                     }
 
-
                     return Content(actionResult);
                 }
                 catch (Exception ex)
                 {
                     OpcSessionHelper.Instance.Disconnect(HttpContext.Session.Id);
+
                     if (lastRetry)
                     {
                         return Content(CreateOpcExceptionActionString(ex));
                     }
+
                     lastRetry = true;
                 }
             }
