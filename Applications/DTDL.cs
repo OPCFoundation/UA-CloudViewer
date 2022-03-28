@@ -46,15 +46,20 @@ namespace UANodesetWebViewer
         {
             try
             {
-                return _map[id];
+                if (_map.TryGetValue(id, out var dtdlType))
+                {
+                    return dtdlType;
+                }
+                else
+                {
+                    return "string"; // default to string
+                }
             }
             catch
             {
                 return "string"; // default to string
             }
         }
-
-
 
         // OPC UA defines variables, views and objects, as well as associated variabletypes, datatypes, referencetypes and objecttypes
         // In addition, OPC UA defines methods and properties
