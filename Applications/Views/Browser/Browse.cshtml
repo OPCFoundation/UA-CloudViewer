@@ -32,22 +32,6 @@
                     <li class="list-group-item" id="variableReadSourceTimeStamp"></li>
                     <li class="list-group-item" id="variableReadSourceServerStamp"></li>
                 </ul>
-                <div class="input-group mt-2 invisible" id="variableWriteContainer">
-                    <input type="text" id="variableWriteInput" class="form-control" placeholder="New value" aria-label="New Value for OPC UA variable" aria-describedby="basic-addon2">
-                    <div class="input-group-append">
-                        <button onclick="VariableWrite_WriteButton_Click(this)" class="btn btn-secondary" type="button">Write</button>
-                    </div>
-                </div>
-            </div>
-            <div class="invisible" id="methodContainer">
-                <div class="alert alert-dark" role="alert" id="methodHeader"></div>
-                <div class="input-group">
-                    <form id="methodInputContainer">
-                    </form>
-                </div>
-                <div class="invisible" id="methodOutputContainer">
-
-                </div>
             </div>
         </div>
     </div>
@@ -112,8 +96,6 @@
         }
 
         function VariableRead(obj, onSuccess) {
-            $("#variableWriteContainer").addClass('invisible');
-
             $.post({
                 url: "/Browser/VariableRead",
                 data: { __RequestVerificationToken: $('[name=__RequestVerificationToken]').val(), jstreeNode: obj.item.nodeId },
@@ -141,127 +123,6 @@
             });
         }
 
-        function VariableWrite(obj) {
-            VariableRead(obj, function () {
-                $("#variableWriteContainer").attr("nodeId", obj.item.nodeId);
-                $("#variableWriteContainer").removeClass('invisible');
-            });
-        }
-
-        function VariableWrite_WriteButton_Click() {
-            var newVal = $("#variableWriteInput").val();
-            var id = $("#variableWriteContainer").attr("nodeId");
-            console.log("updating value of " + id + " to " + newVal);
-
-            $.post({
-                url: "/Browser/VariableWrite",
-                data: { __RequestVerificationToken: $('[name=__RequestVerificationToken]').val(), jstreeNode: id, newValue: newVal },
-                success: function (data) {
-                    if (data.status === "ok") {
-                        console.log("Writing OPC UA attribute value successfull " + data);
-                    }
-                    else {
-                        console.warn("Writing OPC UA attribute value failed " + data);
-                    }
-                },
-                error: function (response) {
-                    console.error("Error updating value of node: %o ", response);
-                }
-            });
-        }
-
-        function MethodCall(obj) {
-            $("#methodHeader").html(obj.item.nodeName);
-            $("#methodContainer").removeClass('invisible');
-
-            $.post({
-                url: "/Browser/MethodCallGetParameter",
-                data: { __RequestVerificationToken: $('[name=__RequestVerificationToken]').val(), jstreeNode: obj.item.nodeId },
-                success: function (data) {
-                    console.log("Loaded parameter for method " + obj.item.nodeName + " " + data);
-
-                    var $methodInput = $("#methodInputContainer");
-                    $methodInput.empty();
-
-                    if (data.count === 0) {
-                        $("#methodInputContainer").append("<strong>No Input Parameter!</strong> <br />");
-                    } else {
-                        for (var i = 0; i < data.count; i++) {
-
-                            console.log("Append fields for parameter: %o", data.parameter[i]);
-
-                            var parameterInput = "<div class=\"form-group\">"
-                                + "<div class=\"input-group mb-2\">"
-                                + "<div class=\"input-group-prepend\">"
-                                + "<span class=\"input-group-text\">" + data.parameter[i].name + "</span>"
-                                + "<span class=\"input-group-text\">" + data.parameter[i].typename + "</span>"
-                                + "</div>"
-                                + "<input type=\"text\" class=\"form-control\" placeholder=\"" + data.parameter[i].description + "\" id=\"methodCall_parameter_" + i + "\" />"
-                                + "</div>"
-                                + "</div>";
-                            $methodInput.append(parameterInput);
-                        }
-
-                        // save context information at form control for call method
-                        $methodInput.attr("parameterData", JSON.stringify(data));
-                    }
-                    $methodInput.append("<button onclick=\"MethodCall_CallButton_Click()\" class=\"btn btn-secondary\" type=\"button\">Call Method</button>");
-
-                    $methodInput.attr("nodeId", JSON.stringify(obj.item.nodeId));
-                },
-                error: function (response) {
-                    console.error("Error during reading of opc method parameter %o", response);
-                }
-            });
-        }
-
-        function MethodCall_CallButton_Click() {
-            $("#methodOutputContainer").removeClass('invisible');
-            console.log("Calling Method");
-            var $methodInput = $("#methodInputContainer");
-            var jsonString = $methodInput.attr("parameterData");
-            var parameterOriginalData = "";
-            if (typeof jsonString !== "undefined" && jsonString !== "") {
-                parameterOriginalData = JSON.parse(jsonString);
-            } else {
-                parameterOriginalData.parameter = "";
-            }
-
-            console.log("parameterData: " + parameterOriginalData.parameter);
-
-            var id = JSON.parse($methodInput.attr("nodeId"));
-            console.log("NodeId " + id);
-
-            var parameterValues = [];
-            for (var i = 0; parameterOriginalData != undefined && i < parameterOriginalData.count; i++) {
-                var parameterId = "#methodCall_parameter_" + i;
-                var parameterVal = $(parameterId).val();
-                parameterValues.push(parameterVal );
-            }
-
-            console.log("parameterValues: " + parameterValues);
-
-            $.post({
-                url: "/Browser/MethodCall",
-                data: { __RequestVerificationToken: $('[name=__RequestVerificationToken]').val(), jstreeNode: id, parameterData: JSON.stringify(parameterOriginalData.parameter), parameterValues: JSON.stringify(parameterValues) },
-                success: function (data) {
-                    console.log("Called method successfully %o", data);
-
-                    if (data.status === "ok") {
-                        for (var i = 0; i < data.numberOfOutputArguments; i++) {
-                            var content = getRightLeftDiv("<strong>" + i + "</strong>", data.numberOfOutputArguments[i]);
-                            $("#methodOutputContainer").append(content);
-                        }
-                    } else {
-                        console.warn("Error during calling method %o", data);
-                    }
-                },
-                error: function (response) {
-                    console.error("Error during invoke opc method %o", response);
-                }
-            });
-        }
-
         function OpcServerMenu(node) {
             var result = {};
 
@@ -278,39 +139,6 @@
                         }
                     }
                 });
-            }
-
-            if (node.original.nodeClass === "Variable" && (node.original.accessLevel & 0x01)) {
-                $.extend(result, {
-                    "Write": {
-                        "separator_before": false,
-                        "separator_after": false,
-                        "label": "Write",
-                        "nodeId": node.id,
-                        "nodeName": node.text,
-                        "action": function (obj) {
-                            VariableWrite(obj);
-                        }
-                    }
-                });
-            }
-
-            if (node.original.nodeClass === "Method") {
-                $.jstree.reference('#OpcNodeTree').refresh_node(node);
-                if (node.original.executable === "True") {
-                    $.extend(result, {
-                        "Call": {
-                            "separator_before": false,
-                            "separator_after": false,
-                            "label": "Call",
-                            "nodeId": node.id,
-                            "nodeName": node.text,
-                            "action": function (obj) {
-                                MethodCall(obj);
-                            }
-                        }
-                    });
-                }
             }
 
             return result;
