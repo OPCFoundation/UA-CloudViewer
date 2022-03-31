@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Mail;
 using System.Text;
 using UACloudLibrary;
@@ -226,13 +227,13 @@ namespace UANodesetWebViewer.Controllers
                 {
                     instanceUrl += '/';
                 }
-                WebClient webClient = new WebClient
+
+                HttpClient webClient = new HttpClient
                 {
-                    BaseAddress = instanceUrl
+                    BaseAddress = new Uri(instanceUrl)
                 };
 
-                webClient.Headers.Add("Content-Type", "application/json");
-                webClient.Headers.Add("Authorization", "basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
+                webClient.DefaultRequestHeaders.Add("Authorization", "basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
 
                 string address = webClient.BaseAddress + "InfoModel/upload";
                 if (overwrite)
@@ -241,10 +242,10 @@ namespace UANodesetWebViewer.Controllers
                 }
 
                 string body = JsonConvert.SerializeObject(uaAddressSpace);
-                string response = webClient.UploadString(address, "PUT", body);
+                HttpResponseMessage response = webClient.Send(new HttpRequestMessage(HttpMethod.Put, address) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
                 webClient.Dispose();
 
-                uaclModel.StatusMessage = response;
+                uaclModel.StatusMessage = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
                 if (BrowserController._nodeSetFilenames.Count > 0)
                 {

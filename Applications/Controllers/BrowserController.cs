@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Packaging;
-using System.Net;
+using System.Net.Http;
 using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,7 +35,7 @@ namespace UANodesetWebViewer.Controllers
 
         private IHubContext<StatusHub> _hubContext;
 
-        private static WebClient _client = new WebClient();
+        private static HttpClient _client = new HttpClient();
 
         private static Dictionary<string, string> _namespacesInCloudLibrary = new Dictionary<string, string>();
 
@@ -98,20 +98,19 @@ namespace UANodesetWebViewer.Controllers
                 NodesetIDs = new SelectList(new List<string>())
             };
 
-            _client.Headers.Remove("Authorization");
-            _client.Headers.Add("Authorization", "basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
-            _client.Headers.Add("Content-Type", "application/json");
+            _client.DefaultRequestHeaders.Remove("Authorization");
+            _client.DefaultRequestHeaders.Add("Authorization", "basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
 
             if (!instanceUrl.EndsWith('/'))
             {
                 instanceUrl += '/';
             }
-            _client.BaseAddress = instanceUrl;
+            _client.BaseAddress = new Uri(instanceUrl);
 
             // get namespaces
             string address = instanceUrl + "infomodel/namespaces";
-            string response = _client.DownloadString(address);
-            string[] identifiers = JsonConvert.DeserializeObject<string[]>(response);
+            HttpResponseMessage response = _client.Send(new HttpRequestMessage(HttpMethod.Get, address));
+            string[] identifiers = JsonConvert.DeserializeObject<string[]>(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
 
             _namespacesInCloudLibrary.Clear();
             foreach (string nodeset in identifiers)
@@ -122,8 +121,8 @@ namespace UANodesetWebViewer.Controllers
 
             // get names
             address = instanceUrl + "infomodel/names";
-            response = _client.DownloadString(address);
-            string[] names = JsonConvert.DeserializeObject<string[]>(response);
+            response = _client.Send(new HttpRequestMessage(HttpMethod.Get, address));
+            string[] names = JsonConvert.DeserializeObject<string[]>(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
 
             List<string> sortedNames = new List<string>(names);
             sortedNames.Sort();
@@ -271,8 +270,8 @@ namespace UANodesetWebViewer.Controllers
             };
 
             string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_namesInCloudLibrary[nodesetfile]);
-            string response = _client.DownloadString(address);
-            AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response);
+            HttpResponseMessage response = _client.Send(new HttpRequestMessage(HttpMethod.Get, address));
+            AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
 
             // store the file on the webserver
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "NodeSets", "nodeset2.xml");
@@ -462,8 +461,8 @@ namespace UANodesetWebViewer.Controllers
                         {
                             // try to auto-download the missing references from the UA Cloud Library
                             string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_namespacesInCloudLibrary[modelreference]);
-                            string response = _client.DownloadString(address);
-                            AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response);
+                            HttpResponseMessage response = _client.Send(new HttpRequestMessage(HttpMethod.Get, address));
+                            AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
 
                             // store the file on the webserver
                             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "NodeSets", addressSpace.Category.Name + ".nodeset2.xml");
