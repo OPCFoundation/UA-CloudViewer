@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Mail;
 using System.Text;
-using UACloudLibrary;
+using UACloudLibrary.Models;
 using UANodesetWebViewer.Models;
 
 namespace UANodesetWebViewer.Controllers
@@ -18,7 +18,8 @@ namespace UANodesetWebViewer.Controllers
         {
             UACLModel uaclModel = new UACLModel
             {
-                StatusMessage = ""
+                StatusMessage = "",
+                InstanceUrl = "https://uacloudlibrary.opcfoundation.org"
             };
 
             if (BrowserController._nodeSetFilenames.Count > 0)
@@ -29,6 +30,7 @@ namespace UANodesetWebViewer.Controllers
             {
                 ViewBag.Nodesetfile = new SelectList(BrowserController._nodeSetFilenames);
             }
+
             return View("Index", uaclModel);
         }
 
@@ -39,7 +41,6 @@ namespace UANodesetWebViewer.Controllers
             string secret,
             string nodesettitle,
             string nodesetfile,
-            string version,
             string license,
             string copyright,
             string description,
@@ -65,7 +66,7 @@ namespace UANodesetWebViewer.Controllers
             {
                 InstanceUrl = instanceUrl,
                 ClientId = clientId,
-                Secret = secret
+                Secret = secret,
             };
 
             try
@@ -95,11 +96,11 @@ namespace UANodesetWebViewer.Controllers
 
                 switch (license)
                 {
-                    case "MIT": uaAddressSpace.License = AddressSpaceLicense.MIT;
+                    case "MIT": uaAddressSpace.License = License.MIT;
                     break;
-                    case "ApacheLicense20": uaAddressSpace.License = AddressSpaceLicense.ApacheLicense20;
+                    case "ApacheLicense20": uaAddressSpace.License = License.ApacheLicense20;
                     break;
-                    case "Custom": uaAddressSpace.License = AddressSpaceLicense.Custom;
+                    case "Custom": uaAddressSpace.License = License.Custom;
                     break;
                     default: throw new ArgumentException("Invalid license entered!");
                 }
@@ -113,7 +114,6 @@ namespace UANodesetWebViewer.Controllers
                     throw new ArgumentException("Invalid nodeset title entered!");
                 }
 
-                uaAddressSpace.Version = new Version(version).ToString();
                 if (!string.IsNullOrWhiteSpace(copyright))
                 {
                     uaAddressSpace.CopyrightText = copyright;

@@ -1,5 +1,5 @@
-﻿@using UANodesetWebViewer.Models
-@using UACloudLibrary
+﻿@using UACloudLibrary.Models
+@using UANodesetWebViewer.Models
 
 @model UACLModel
 
@@ -42,12 +42,8 @@
             @Html.DropDownList("nodesetfile", @ViewBag.Nodesetfile, null, new { @class = "form-control"})
         </p>
         <p>
-            Version (<b>required</b>, Major.Minor.Revision notation, e.g. 1.0.0)<br />
-            @Html.TextBox("version", null, new { style = "width:100%;" })<br />
-        <p />
-        <p>
             License (<b>required</b>)<br />
-            @Html.DropDownList("license", new SelectList(Enum.GetValues(typeof(AddressSpaceLicense))), null, new { @class = "form-control" })
+            @Html.DropDownList("license", new SelectList(Enum.GetValues(typeof(License))), null, new { @class = "form-control" })
         <p />
         <p>
             Copyright Text (<b>required</b>)<br />

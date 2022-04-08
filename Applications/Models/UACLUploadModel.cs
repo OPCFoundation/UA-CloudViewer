@@ -27,12 +27,13 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-namespace UACloudLibrary
+namespace UACloudLibrary.Models
 {
+    using Newtonsoft.Json;
     using System;
     using System.ComponentModel.DataAnnotations;
 
-    public enum AddressSpaceLicense
+    public enum License
     {
         MIT,
         ApacheLicense20,
@@ -44,13 +45,12 @@ namespace UACloudLibrary
         public AddressSpace()
         {
             Title = string.Empty;
-            Version = "1.0.0";
-            License = AddressSpaceLicense.Custom;
+            License = License.Custom;
             CopyrightText = string.Empty;
             Contributor = new Organisation();
             Description = string.Empty;
-            Category = new AddressSpaceCategory();
-            Nodeset = new AddressSpaceNodeset2();
+            Category = new Category();
+            Nodeset = new Nodeset();
             DocumentationUrl = null;
             IconUrl = null;
             LicenseUrl = null;
@@ -60,59 +60,82 @@ namespace UACloudLibrary
             TestSpecificationUrl = null;
             SupportedLocales = new string[0];
             NumberOfDownloads = 0;
-            AdditionalProperties = new Tuple<string, string>[0];
+            AdditionalProperties = null;
         }
 
         [Required]
+        [JsonProperty("title")]
         public string Title { get; set; }
 
         [Required]
-        public string Version { get; set; }
+        [JsonProperty("license")]
+        public License License { get; set; }
 
         [Required]
-        public AddressSpaceLicense License { get; set; }
-
-        [Required]
+        [JsonProperty("copyrightText")]
         public string CopyrightText { get; set; }
 
         [Required]
+        [JsonProperty("contributor")]
         public Organisation Contributor { get; set; }
 
         [Required]
+        [JsonProperty("description")]
         public string Description { get; set; }
 
         [Required]
-        public AddressSpaceCategory Category { get; set; }
+        [JsonProperty("category")]
+        public Category Category { get; set; }
 
         [Required]
-        public AddressSpaceNodeset2 Nodeset { get; set; }
+        [JsonProperty("nodeset")]
+        public Nodeset Nodeset { get; set; }
 
         /// <summary>
         /// Link to additional documentation, specifications, GitHub, etc.
         /// For example, If the address space is based on a standard or official UA Information Model, this links to the standard or the OPC specification URL.
         /// </summary>
+        [JsonProperty("documentationUrl")]
         public Uri DocumentationUrl { get; set; }
 
+        [JsonProperty("iconUrl")]
         public Uri IconUrl { get; set; }
 
+        [JsonProperty("licenseUrl")]
         public Uri LicenseUrl { get; set; }
 
+        [JsonProperty("keywords")]
         public string[] Keywords { get; set; }
 
+        [JsonProperty("purchasingInformationUrl")]
         public Uri PurchasingInformationUrl { get; set; }
 
+        [JsonProperty("releaseNotesUrl")]
         public Uri ReleaseNotesUrl { get; set; }
 
+        [JsonProperty("testSpecificationUrl")]
         public Uri TestSpecificationUrl { get; set; }
 
         /// <summary>
         /// Supported ISO language codes
         /// </summary>
+        [JsonProperty("supportedLocales")]
         public string[] SupportedLocales { get; set; }
 
+        [JsonProperty("numberOfDownloads")]
         public uint NumberOfDownloads { get; set; }
 
-        public Tuple<string, string>[] AdditionalProperties { get; set; }
+        [JsonProperty("additionalProperties")]
+        public Property[] AdditionalProperties { get; set; }
+    }
+
+    public class Property
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("value")]
+        public string Value { get; set; }
     }
 
     public class Organisation
@@ -127,20 +150,25 @@ namespace UACloudLibrary
         }
 
         [Required]
+        [JsonProperty("name")]
         public string Name { get; set; }
 
+        [JsonProperty("description")]
         public string Description { get; set; }
 
+        [JsonProperty("logoUrl")]
         public Uri LogoUrl { get; set; }
 
+        [JsonProperty("contactEmail")]
         public string ContactEmail { get; set; }
 
+        [JsonProperty("website")]
         public Uri Website { get; set; }
     }
 
-    public class AddressSpaceCategory
+    public class Category
     {
-        public AddressSpaceCategory()
+        public Category()
         {
             Name = string.Empty;
             Description = null;
@@ -148,27 +176,45 @@ namespace UACloudLibrary
         }
 
         [Required]
+        [JsonProperty("name")]
         public string Name { get; set; }
 
+        [JsonProperty("description")]
         public string Description { get; set; }
 
+        [JsonProperty("iconUrl")]
         public Uri IconUrl { get; set; }
     }
 
-    public class AddressSpaceNodeset2
+    public class Nodeset
     {
-        public AddressSpaceNodeset2()
+        public Nodeset()
         {
             NodesetXml = string.Empty;
+            Identifier = 0;
+            NamespaceUri = null;
+            Version = string.Empty;
             PublicationDate = DateTime.MinValue;
             LastModifiedDate = DateTime.MinValue;
         }
 
         [Required]
+        [JsonProperty("nodesetXml")]
         public string NodesetXml { get; set; }
 
+        [JsonProperty("identifier")]
+        public uint Identifier { get; set; }
+
+        [JsonProperty("namespaceUri")]
+        public Uri NamespaceUri { get; set; }
+
+        [JsonProperty("version")]
+        public string Version { get; set; }
+
+        [JsonProperty("publicationDate")]
         public DateTime PublicationDate { get; set; }
 
+        [JsonProperty("lastModifiedDate")]
         public DateTime LastModifiedDate { get; set; }
     }
 }
