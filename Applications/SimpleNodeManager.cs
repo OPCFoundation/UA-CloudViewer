@@ -20,6 +20,9 @@ namespace UANodesetWebViewer
             List<string> namespaces = new List<string>();
             foreach (string nodesetFile in BrowserController._nodeSetFilenames)
             {
+                // workaround for bug https://github.com/dotnet/runtime/issues/67622
+                File.WriteAllText(nodesetFile, File.ReadAllText(nodesetFile).Replace("<Value/>", "<Value xsi:nil='true' />"));
+
                 using (Stream stream = new FileStream(nodesetFile, FileMode.Open))
                 {
                     UANodeSet nodeSet = UANodeSet.Read(stream);
@@ -71,6 +74,9 @@ namespace UANodesetWebViewer
 
         private void ImportNodeset2Xml(IDictionary<NodeId, IList<IReference>> externalReferences, string resourcepath, int pass)
         {
+            // workaround for bug https://github.com/dotnet/runtime/issues/67622
+            File.WriteAllText(resourcepath, File.ReadAllText(resourcepath).Replace("<Value/>", "<Value xsi:nil='true' />"));
+
             using (Stream stream = new FileStream(resourcepath, FileMode.Open))
             {
                 UANodeSet nodeSet = UANodeSet.Read(stream);

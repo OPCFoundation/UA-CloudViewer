@@ -375,6 +375,9 @@ namespace UANodesetWebViewer.Controllers
             List<string> modelreferences = new List<string>();
             foreach (string nodesetFile in _nodeSetFilenames)
             {
+                // workaround for bug https://github.com/dotnet/runtime/issues/67622
+                System.IO.File.WriteAllText(nodesetFile, System.IO.File.ReadAllText(nodesetFile).Replace("<Value/>", "<Value xsi:nil='true' />"));
+
                 using (Stream stream = new FileStream(nodesetFile, FileMode.Open))
                 {
                     UANodeSet nodeSet = UANodeSet.Read(stream);
