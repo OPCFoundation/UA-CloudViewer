@@ -185,14 +185,14 @@ namespace UANodesetWebViewer.Controllers
                                     IdType = "URI",
                                     Local = true,
                                     Type = "Submodel",
-                                    Text = "http://www.opcfoundation.org/type/opcua/" + filename.Replace(".", "").ToLower()
+                                    Text = "http://www.opcfoundation.org/type/opcua/" + Path.GetFileName(filename).Replace(".", "").ToLower()
                             };
 
                                 aasEnv.AssetAdministrationShells.AssetAdministrationShell.SubmodelRefs.Add(nodesetReference);
 
-                                aasSubModel.Identification.Text += filename.Replace(".", "").ToLower();
+                                aasSubModel.Identification.Text += Path.GetFileName(filename).Replace(".", "").ToLower();
                                 aasSubModel.SubmodelElements.SubmodelElement.SubmodelElementCollection.Value.SubmodelElement.File.Value =
-                                    aasSubModel.SubmodelElements.SubmodelElement.SubmodelElementCollection.Value.SubmodelElement.File.Value.Replace("TOBEREPLACED", filename);
+                                    aasSubModel.SubmodelElements.SubmodelElement.SubmodelElementCollection.Value.SubmodelElement.File.Value.Replace("TOBEREPLACED", Path.GetFileName(filename));
                                 aasEnv.Submodels.Add(aasSubModel);
                             }
                         }
@@ -213,7 +213,7 @@ namespace UANodesetWebViewer.Controllers
                     // add nodeset files
                     for(int i = 0; i < _nodeSetFilenames.Count; i++)
                     {
-                        PackagePart supplementalDoc = package.CreatePart(new Uri("/aasx/" + Path.GetFileNameWithoutExtension(_nodeSetFilenames[i]), UriKind.Relative), MediaTypeNames.Text.Xml);
+                        PackagePart supplementalDoc = package.CreatePart(new Uri("/aasx/" + Path.GetFileName(_nodeSetFilenames[i]), UriKind.Relative), MediaTypeNames.Text.Xml);
                         string documentPath = Path.Combine(Directory.GetCurrentDirectory(), _nodeSetFilenames[i]);
                         using (FileStream fileStream = new FileStream(documentPath, FileMode.Open, FileAccess.Read))
                         {
