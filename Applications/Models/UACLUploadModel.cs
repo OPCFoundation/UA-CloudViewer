@@ -29,7 +29,6 @@
 
 namespace UACloudLibrary.Models
 {
-    using Newtonsoft.Json;
     using System;
     using System.ComponentModel.DataAnnotations;
 
@@ -40,9 +39,9 @@ namespace UACloudLibrary.Models
         Custom
     }
 
-    public class AddressSpace
+    public class UANameSpace
     {
-        public AddressSpace()
+        public UANameSpace()
         {
             Title = string.Empty;
             License = License.Custom;
@@ -54,87 +53,68 @@ namespace UACloudLibrary.Models
             DocumentationUrl = null;
             IconUrl = null;
             LicenseUrl = null;
-            Keywords = new string[0];
+            Keywords = Array.Empty<string>();
             PurchasingInformationUrl = null;
             ReleaseNotesUrl = null;
             TestSpecificationUrl = null;
-            SupportedLocales = new string[0];
+            SupportedLocales = Array.Empty<string>();
             NumberOfDownloads = 0;
             AdditionalProperties = null;
         }
 
         [Required]
-        [JsonProperty("title")]
         public string Title { get; set; }
 
         [Required]
-        [JsonProperty("license")]
         public License License { get; set; }
 
         [Required]
-        [JsonProperty("copyrightText")]
         public string CopyrightText { get; set; }
 
         [Required]
-        [JsonProperty("contributor")]
         public Organisation Contributor { get; set; }
 
         [Required]
-        [JsonProperty("description")]
         public string Description { get; set; }
 
         [Required]
-        [JsonProperty("category")]
         public Category Category { get; set; }
 
         [Required]
-        [JsonProperty("nodeset")]
         public Nodeset Nodeset { get; set; }
 
         /// <summary>
         /// Link to additional documentation, specifications, GitHub, etc.
         /// For example, If the address space is based on a standard or official UA Information Model, this links to the standard or the OPC specification URL.
         /// </summary>
-        [JsonProperty("documentationUrl")]
         public Uri DocumentationUrl { get; set; }
 
-        [JsonProperty("iconUrl")]
         public Uri IconUrl { get; set; }
 
-        [JsonProperty("licenseUrl")]
         public Uri LicenseUrl { get; set; }
 
-        [JsonProperty("keywords")]
         public string[] Keywords { get; set; }
 
-        [JsonProperty("purchasingInformationUrl")]
         public Uri PurchasingInformationUrl { get; set; }
 
-        [JsonProperty("releaseNotesUrl")]
         public Uri ReleaseNotesUrl { get; set; }
 
-        [JsonProperty("testSpecificationUrl")]
         public Uri TestSpecificationUrl { get; set; }
 
         /// <summary>
         /// Supported ISO language codes
         /// </summary>
-        [JsonProperty("supportedLocales")]
         public string[] SupportedLocales { get; set; }
 
-        [JsonProperty("numberOfDownloads")]
         public uint NumberOfDownloads { get; set; }
 
-        [JsonProperty("additionalProperties")]
-        public Property[] AdditionalProperties { get; set; }
+        public UAProperty[] AdditionalProperties { get; set; }
     }
 
-    public class Property
+    public class UAProperty
     {
-        [JsonProperty("name")]
         public string Name { get; set; }
 
-        [JsonProperty("value")]
         public string Value { get; set; }
     }
 
@@ -150,19 +130,14 @@ namespace UACloudLibrary.Models
         }
 
         [Required]
-        [JsonProperty("name")]
         public string Name { get; set; }
 
-        [JsonProperty("description")]
         public string Description { get; set; }
 
-        [JsonProperty("logoUrl")]
         public Uri LogoUrl { get; set; }
 
-        [JsonProperty("contactEmail")]
         public string ContactEmail { get; set; }
 
-        [JsonProperty("website")]
         public Uri Website { get; set; }
     }
 
@@ -176,13 +151,10 @@ namespace UACloudLibrary.Models
         }
 
         [Required]
-        [JsonProperty("name")]
         public string Name { get; set; }
 
-        [JsonProperty("description")]
         public string Description { get; set; }
 
-        [JsonProperty("iconUrl")]
         public Uri IconUrl { get; set; }
     }
 
@@ -199,22 +171,16 @@ namespace UACloudLibrary.Models
         }
 
         [Required]
-        [JsonProperty("nodesetXml")]
         public string NodesetXml { get; set; }
 
-        [JsonProperty("identifier")]
         public uint Identifier { get; set; }
 
-        [JsonProperty("namespaceUri")]
         public Uri NamespaceUri { get; set; }
 
-        [JsonProperty("version")]
         public string Version { get; set; }
 
-        [JsonProperty("publicationDate")]
         public DateTime PublicationDate { get; set; }
 
-        [JsonProperty("lastModifiedDate")]
         public DateTime LastModifiedDate { get; set; }
     }
 }

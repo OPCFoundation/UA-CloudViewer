@@ -271,11 +271,11 @@ namespace UANodesetWebViewer.Controllers
 
             string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_namesInCloudLibrary[nodesetfile]);
             HttpResponseMessage response = _client.Send(new HttpRequestMessage(HttpMethod.Get, address));
-            AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+            UANameSpace nameSpace = JsonConvert.DeserializeObject<UANameSpace>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
 
             // store the file on the webserver
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "NodeSets", "nodeset2.xml");
-            System.IO.File.WriteAllText(filePath, addressSpace.Nodeset.NodesetXml);
+            System.IO.File.WriteAllText(filePath, nameSpace.Nodeset.NodesetXml);
             _nodeSetFilenames.Add(filePath);
 
             string error = ValidateNamespacesAndModels(true);
@@ -465,11 +465,11 @@ namespace UANodesetWebViewer.Controllers
                             // try to auto-download the missing references from the UA Cloud Library
                             string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_namespacesInCloudLibrary[modelreference]);
                             HttpResponseMessage response = _client.Send(new HttpRequestMessage(HttpMethod.Get, address));
-                            AddressSpace addressSpace = JsonConvert.DeserializeObject<AddressSpace>(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
+                            UANameSpace nameSpace = JsonConvert.DeserializeObject<UANameSpace>(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
 
                             // store the file on the webserver
-                            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "NodeSets", addressSpace.Category.Name + ".nodeset2.xml");
-                            System.IO.File.WriteAllText(filePath, addressSpace.Nodeset.NodesetXml);
+                            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "NodeSets", nameSpace.Category.Name + ".nodeset2.xml");
+                            System.IO.File.WriteAllText(filePath, nameSpace.Nodeset.NodesetXml);
                             _nodeSetFilenames.Add(filePath);
                         }
                         catch (Exception ex)

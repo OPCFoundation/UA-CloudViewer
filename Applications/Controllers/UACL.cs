@@ -44,9 +44,9 @@ namespace UANodesetWebViewer.Controllers
             string license,
             string copyright,
             string description,
-            string addressspacename,
-            string addressspacedescription,
-            string addressspaceiconurl,
+            string namespacename,
+            string namespacedescription,
+            string namespaceiconurl,
             string documentationurl,
             string iconurl,
             string licenseurl,
@@ -92,22 +92,22 @@ namespace UANodesetWebViewer.Controllers
                     throw new ArgumentException("Invalid UA Cloud Library password entered!");
                 }
 
-                AddressSpace uaAddressSpace = new AddressSpace();
+                UANameSpace nameSpace = new UANameSpace();
 
                 switch (license)
                 {
-                    case "MIT": uaAddressSpace.License = License.MIT;
+                    case "MIT": nameSpace.License = License.MIT;
                     break;
-                    case "ApacheLicense20": uaAddressSpace.License = License.ApacheLicense20;
+                    case "ApacheLicense20": nameSpace.License = License.ApacheLicense20;
                     break;
-                    case "Custom": uaAddressSpace.License = License.Custom;
+                    case "Custom": nameSpace.License = License.Custom;
                     break;
                     default: throw new ArgumentException("Invalid license entered!");
                 }
 
                 if (!string.IsNullOrWhiteSpace(nodesettitle))
                 {
-                    uaAddressSpace.Title = nodesettitle;
+                    nameSpace.Title = nodesettitle;
                 }
                 else
                 {
@@ -116,7 +116,7 @@ namespace UANodesetWebViewer.Controllers
 
                 if (!string.IsNullOrWhiteSpace(copyright))
                 {
-                    uaAddressSpace.CopyrightText = copyright;
+                    nameSpace.CopyrightText = copyright;
                 }
                 else
                 {
@@ -125,75 +125,75 @@ namespace UANodesetWebViewer.Controllers
 
                 if (!string.IsNullOrWhiteSpace(description))
                 {
-                    uaAddressSpace.Description = description;
+                    nameSpace.Description = description;
                 }
                 else
                 {
                     throw new ArgumentException("Invalid description entered!");
                 }
 
-                if (!string.IsNullOrWhiteSpace(addressspacename))
+                if (!string.IsNullOrWhiteSpace(namespacename))
                 {
-                    uaAddressSpace.Category.Name = addressspacename;
+                    nameSpace.Category.Name = namespacename;
                 }
                 else
                 {
                     throw new ArgumentException("Invalid address space name entered!");
                 }
 
-                if (!string.IsNullOrWhiteSpace(addressspacedescription))
+                if (!string.IsNullOrWhiteSpace(namespacedescription))
                 {
-                    uaAddressSpace.Category.Description = addressspacedescription;
+                    nameSpace.Category.Description = namespacedescription;
                 }
 
-                if (!string.IsNullOrWhiteSpace(addressspaceiconurl))
+                if (!string.IsNullOrWhiteSpace(namespaceiconurl))
                 {
-                    uaAddressSpace.Category.IconUrl = new Uri(addressspaceiconurl);
+                    nameSpace.Category.IconUrl = new Uri(namespaceiconurl);
                 }
 
                 if (!string.IsNullOrWhiteSpace(documentationurl))
                 {
-                    uaAddressSpace.DocumentationUrl = new Uri(documentationurl);
+                    nameSpace.DocumentationUrl = new Uri(documentationurl);
                 }
 
                 if (!string.IsNullOrWhiteSpace(iconurl))
                 {
-                    uaAddressSpace.IconUrl = new Uri(iconurl);
+                    nameSpace.IconUrl = new Uri(iconurl);
                 }
 
                 if (!string.IsNullOrWhiteSpace(licenseurl))
                 {
-                    uaAddressSpace.LicenseUrl = new Uri(licenseurl);
+                    nameSpace.LicenseUrl = new Uri(licenseurl);
                 }
 
                 if (!string.IsNullOrWhiteSpace(keywords))
                 {
-                    uaAddressSpace.Keywords = keywords.Split(',');
+                    nameSpace.Keywords = keywords.Split(',');
                 }
 
                 if (!string.IsNullOrWhiteSpace(purchasinginfo))
                 {
-                    uaAddressSpace.PurchasingInformationUrl = new Uri(purchasinginfo);
+                    nameSpace.PurchasingInformationUrl = new Uri(purchasinginfo);
                 }
 
                 if (!string.IsNullOrWhiteSpace(releasenotes))
                 {
-                    uaAddressSpace.ReleaseNotesUrl = new Uri(releasenotes);
+                    nameSpace.ReleaseNotesUrl = new Uri(releasenotes);
                 }
 
                 if (!string.IsNullOrWhiteSpace(testspecification))
                 {
-                    uaAddressSpace.TestSpecificationUrl = new Uri(testspecification);
+                    nameSpace.TestSpecificationUrl = new Uri(testspecification);
                 }
 
                 if (!string.IsNullOrWhiteSpace(locales))
                 {
-                    uaAddressSpace.SupportedLocales = locales.Split(',');
+                    nameSpace.SupportedLocales = locales.Split(',');
                 }
 
                 if (!string.IsNullOrWhiteSpace(orgname))
                 {
-                    uaAddressSpace.Contributor.Name = orgname;
+                    nameSpace.Contributor.Name = orgname;
                 }
                 else
                 {
@@ -202,25 +202,25 @@ namespace UANodesetWebViewer.Controllers
 
                 if (!string.IsNullOrWhiteSpace(orgdescription))
                 {
-                    uaAddressSpace.Contributor.Description = orgdescription;
+                    nameSpace.Contributor.Description = orgdescription;
                 }
 
                 if (!string.IsNullOrWhiteSpace(orglogo))
                 {
-                    uaAddressSpace.Contributor.LogoUrl = new Uri(orglogo);
+                    nameSpace.Contributor.LogoUrl = new Uri(orglogo);
                 }
 
                 if (!string.IsNullOrWhiteSpace(orgcontact))
                 {
-                    uaAddressSpace.Contributor.ContactEmail = new MailAddress(orgcontact).Address;
+                    nameSpace.Contributor.ContactEmail = new MailAddress(orgcontact).Address;
                 }
 
                 if (!string.IsNullOrWhiteSpace(orgwebsite))
                 {
-                    uaAddressSpace.Contributor.Website = new Uri(orgwebsite);
+                    nameSpace.Contributor.Website = new Uri(orgwebsite);
                 }
 
-                uaAddressSpace.Nodeset.NodesetXml = System.IO.File.ReadAllText(nodesetfile);
+                nameSpace.Nodeset.NodesetXml = System.IO.File.ReadAllText(nodesetfile);
 
                 instanceUrl = instanceUrl.Trim();
                 if (!instanceUrl.EndsWith('/'))
@@ -241,7 +241,7 @@ namespace UANodesetWebViewer.Controllers
                     address += "?overwrite=true";
                 }
 
-                string body = JsonConvert.SerializeObject(uaAddressSpace);
+                string body = JsonConvert.SerializeObject(nameSpace);
                 HttpResponseMessage response = webClient.Send(new HttpRequestMessage(HttpMethod.Put, address) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
                 webClient.Dispose();
 
