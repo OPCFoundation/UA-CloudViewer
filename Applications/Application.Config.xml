@@ -22,8 +22,8 @@
 
     <!-- The location of the application instance certificate in the Windows certificate store -->
     <ApplicationCertificate>
-      <StoreType>X509Store</StoreType>
-      <StorePath>CurrentUser\My</StorePath>
+      <StoreType>Directory</StoreType>
+      <StorePath>%LocalFolder%/OPC Foundation/CertificateStores/own</StorePath>
       <SubjectName>UA NodeSet Web Viewer</SubjectName>
     </ApplicationCertificate>
 
