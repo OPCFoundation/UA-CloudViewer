@@ -38,13 +38,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.DigitalTwins.Core" Version="1.2.2" />
-    <PackageReference Include="Azure.Identity" Version="1.5.0" />
+    <PackageReference Include="Azure.DigitalTwins.Core" Version="1.4.0" />
+    <PackageReference Include="Azure.Identity" Version="1.6.1" />
     <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Azure.Kusto.Ingest" Version="10.0.1" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.0" />
-    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Symbols" Version="1.4.368.33" />
+    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="10.1.1" />
+    <PackageReference Include="Microsoft.Azure.Kusto.Ingest" Version="10.1.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Symbols" Version="1.4.370.12" />
     <PackageReference Include="System.IO.Packaging" Version="6.0.0" />
   </ItemGroup>
 
