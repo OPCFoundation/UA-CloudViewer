@@ -14,7 +14,7 @@ Additional features of the **UA Cloud Viewer** include the ability to run in a D
 
 Docker containers are automatically built. Simply run the app via:
 
-`docker run -p 80:80 ghcr.io/digitaltwinconsortium/ua-cloudnodesetviewer:main`
+`docker run -p 80:80 ghcr.io/digitaltwinconsortium/ua-cloudviewer:main`
 
 And then point your browser to <http://localhost>.
 
