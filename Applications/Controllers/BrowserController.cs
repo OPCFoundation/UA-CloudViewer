@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -6,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Opc.Ua;
 using Opc.Ua.Client;
+using Opc.Ua.Cloud.Library.Models;
 using Opc.Ua.Configuration;
 using Opc.Ua.Export;
 using System;
@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Xml;
 using System.Xml.Serialization;
-using UACloudLibrary.Models;
 using UANodesetWebViewer.Models;
 
 namespace UANodesetWebViewer.Controllers
@@ -116,7 +115,7 @@ namespace UANodesetWebViewer.Controllers
             foreach (string nodeset in identifiers)
             {
                 string[] tuple = nodeset.Split(",");
-                _namespacesInCloudLibrary.Add(tuple[0], tuple[1]);
+                _namespacesInCloudLibrary.Add(tuple[1], tuple[0]);
             }
 
             // get names
@@ -131,10 +130,10 @@ namespace UANodesetWebViewer.Controllers
             foreach (string name in sortedNames)
             {
                 string[] tuple = name.Split(",");
-                _namesInCloudLibrary.Add(tuple[0], tuple[1]);
+                _namesInCloudLibrary.Add(tuple[1], tuple[0]);
             }
 
-            sessionModel.NodesetIDs = new SelectList(_namesInCloudLibrary.Keys);
+            sessionModel.NodesetIDs = new SelectList(_namesInCloudLibrary.Values);
 
             return View("Index", sessionModel);
         }
@@ -269,7 +268,16 @@ namespace UANodesetWebViewer.Controllers
                 ServerPort = "4840",
             };
 
-            string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_namesInCloudLibrary[nodesetfile]);
+            string address = _client.BaseAddress + "infomodel/download/";
+            foreach (KeyValuePair<string, string> ns in _namesInCloudLibrary)
+            {
+                if (ns.Value == nodesetfile)
+                {
+                    address += Uri.EscapeDataString(ns.Key);
+                    break;
+                }
+            }
+
             HttpResponseMessage response = _client.Send(new HttpRequestMessage(HttpMethod.Get, address));
             UANameSpace nameSpace = JsonConvert.DeserializeObject<UANameSpace>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
 
@@ -463,7 +471,16 @@ namespace UANodesetWebViewer.Controllers
                         try
                         {
                             // try to auto-download the missing references from the UA Cloud Library
-                            string address = _client.BaseAddress + "infomodel/download/" + Uri.EscapeDataString(_namespacesInCloudLibrary[modelreference]);
+                            string address = _client.BaseAddress + "infomodel/download/";
+                            foreach(KeyValuePair<string, string> ns in _namespacesInCloudLibrary)
+                            {
+                                if (ns.Value == modelreference)
+                                {
+                                    address += Uri.EscapeDataString(ns.Key);
+                                    break;
+                                }
+                            }
+
                             HttpResponseMessage response = _client.Send(new HttpRequestMessage(HttpMethod.Get, address));
                             UANameSpace nameSpace = JsonConvert.DeserializeObject<UANameSpace>(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
 
@@ -844,7 +861,7 @@ namespace UANodesetWebViewer.Controllers
 
                     Session session = await OpcSessionHelper.Instance.GetSessionAsync(_application.ApplicationConfiguration, HttpContext.Session.Id, HttpContext.Session.GetString("EndpointUrl")).ConfigureAwait(false);
                     ResponseHeader responseHeader = session.Read(null, 0, TimestampsToReturn.Both, nodesToRead, out values, out diagnosticInfos);
-                    
+
                     string actionResult;
                     if (values.Count > 0)
                     {

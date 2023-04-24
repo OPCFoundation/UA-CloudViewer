@@ -27,7 +27,7 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-namespace UACloudLibrary.Models
+namespace Opc.Ua.Cloud.Library.Models
 {
     using System;
     using System.ComponentModel.DataAnnotations;
@@ -108,6 +108,8 @@ namespace UACloudLibrary.Models
 
         public uint NumberOfDownloads { get; set; }
 
+        public string ValidationStatus { get; set; }
+
         public UAProperty[] AdditionalProperties { get; set; }
     }
 
@@ -139,6 +141,24 @@ namespace UACloudLibrary.Models
         public string ContactEmail { get; set; }
 
         public Uri Website { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if ((obj == null) || !this.GetType().Equals(obj.GetType()))
+            {
+                return false;
+            }
+            else
+            {
+                Organisation org = (Organisation)obj;
+                return Name.Equals(org.Name, StringComparison.Ordinal);
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode(StringComparison.Ordinal);
+        }
     }
 
     public class Category
@@ -156,6 +176,24 @@ namespace UACloudLibrary.Models
         public string Description { get; set; }
 
         public Uri IconUrl { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if ((obj == null) || !this.GetType().Equals(obj.GetType()))
+            {
+                return false;
+            }
+            else
+            {
+                Category org = (Category)obj;
+                return Name.Equals(org.Name, StringComparison.Ordinal);
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode(StringComparison.Ordinal);
+        }
     }
 
     public class Nodeset
