@@ -89,7 +89,7 @@ namespace UANodesetWebViewer
         /// <summary>
         /// Ensures session is closed when server does not reply.
         /// </summary>
-        private static void StandardClient_KeepAlive(Session sender, KeepAliveEventArgs e)
+        private static void StandardClient_KeepAlive(ISession sender, KeepAliveEventArgs e)
         {
             if (e != null)
             {
