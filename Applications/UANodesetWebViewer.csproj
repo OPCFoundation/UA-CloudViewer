@@ -39,11 +39,11 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.DigitalTwins.Core" Version="1.4.0" />
-    <PackageReference Include="Azure.Identity" Version="1.9.0" />
-    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="11.3.2" />
-    <PackageReference Include="Microsoft.Azure.Kusto.Ingest" Version="11.3.2" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
-    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.4.371.96" />
+    <PackageReference Include="Azure.Identity" Version="1.10.3" />
+    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="11.3.4" />
+    <PackageReference Include="Microsoft.Azure.Kusto.Ingest" Version="11.3.4" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.4.372.56" />
     <PackageReference Include="System.IO.Packaging" Version="7.0.0" />
   </ItemGroup>
 
