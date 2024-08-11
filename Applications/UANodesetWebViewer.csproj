@@ -8,42 +8,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="OPC Foundation\**" />
-    <Content Remove="OPC Foundation\**" />
-    <EmbeddedResource Remove="OPC Foundation\**" />
-    <None Remove="OPC Foundation\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="aasenv-with-no-id.aas.xml" />
     <None Remove="Application.Config.xml" />
-    <None Remove="submodel.aas.xml" />
-    <None Remove="submodel.adt.xml" />
     <None Remove="UANodeSet.aasx" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="aasenv-with-no-id.aas.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="Application.Config.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="submodel.aas.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="submodel.adt.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.DigitalTwins.Core" Version="1.4.0" />
-    <PackageReference Include="Azure.Identity" Version="1.11.0" />
-    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="12.2.0" />
-    <PackageReference Include="Microsoft.Azure.Kusto.Ingest" Version="12.2.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
-    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.5.374.36" />
+    <PackageReference Include="Azure.Identity" Version="1.12.0" />
+    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="12.2.4" />
+    <PackageReference Include="Microsoft.Azure.Kusto.Ingest" Version="12.2.4" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.5.374.78" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client.ComplexTypes" Version="1.5.374.78" />
     <PackageReference Include="System.IO.Packaging" Version="8.0.0" />
   </ItemGroup>
 

@@ -1,0 +1,282 @@
+﻿@using UANodesetWebViewer.Models
+@using UANodesetWebViewer.Controllers
+@using Opc.Ua
+@using Opc.Ua.Client;
+
+@inject OpcSessionHelper _helper
+
+<div class="col-12 row">
+    <div class="col-6">
+        <Tree Nodes="UANodes" TNode="UANode" ChildSelector="node => node.Children" SelectedNodeChanged="SelectedNodeChanged" OnNodeExpand="OnNodeExpand" HasChildNodes="HasChildNodes">
+            <TitleTemplate>
+                <span class="text-dark">@context.Text</span>
+            </TitleTemplate>
+        </Tree>
+    </div>
+    <div class="col-6">
+        Node Id: <b>@NodeId</b><br />
+        Node Display Name: <b>@NodeDisplayName</b><br />
+        Node Data Type: <b>@NodeType</b><br />
+    </div>
+</div>
+<div class="text-danger">
+    <p>
+        @StatusMessage
+    </p>
+</div>
+
+@code {
+
+    [Parameter]
+    public string EndpointUrl { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Username { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Password { get; set; } = string.Empty;
+
+    private class UANode
+    {
+        public string Text { get; set; } = string.Empty;
+
+        public string NodeId { get; set; } = string.Empty;
+
+        public IEnumerable<UANode> Children { get; set; } = null;
+    }
+
+    private IEnumerable<UANode> UANodes;
+
+    private string NodeId { get; set; } = string.Empty;
+    private string NodeDisplayName { get; set; } = string.Empty;
+    private string NodeType { get; set; } = string.Empty;
+    private bool NodeNotPublishable { get; set; } = true;
+
+    private string StatusMessage { get; set; } = string.Empty;
+
+    private string SessionId { get; set; } = Guid.NewGuid().ToString();
+
+    protected override void OnInitialized()
+    {
+        UANodes = GetRootNodeAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task OnNodeExpand(UANode expendedNode)
+    {
+        if (expendedNode.Children == null)
+        {
+            expendedNode.Children = await GetChildrenAsync(expendedNode).ConfigureAwait(false);
+        }
+    }
+
+    private async void SelectedNodeChanged(UANode node)
+    {
+        await VariableReadAsync(node).ConfigureAwait(false);
+    }
+
+    private bool HasChildNodes(UANode node)
+    {
+        if (node.Children == null)
+        {
+            return true;
+        }
+
+        if (node.Children.Count() == 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task<List<UANode>> GetRootNodeAsync()
+    {
+        List<UANode> nodes = new();
+
+        try
+        {
+            ReferenceDescriptionCollection references = await BrowseNodeAsync(ObjectIds.RootFolder).ConfigureAwait(false);
+
+            nodes.Add(new UANode
+            {
+                Text = "Root",
+                NodeId = ObjectIds.RootFolder.ToString()
+            });
+
+            return nodes;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = ex.Message;
+
+            _helper.Disconnect(SessionId);
+
+            return nodes;
+        }
+    }
+
+    private async Task<ReferenceDescriptionCollection> BrowseNodeAsync(NodeId nodeId)
+    {
+        ReferenceDescriptionCollection references = new();
+
+        BrowseDescription nodeToBrowse = new BrowseDescription
+        {
+            NodeId = nodeId,
+            BrowseDirection = BrowseDirection.Forward,
+            ReferenceTypeId = null,
+            IncludeSubtypes = true,
+            NodeClassMask = (uint)(NodeClass.Object | NodeClass.Variable),
+            ResultMask = (uint)BrowseResultMask.All
+        };
+
+        BrowseDescriptionCollection nodesToBrowse = new BrowseDescriptionCollection
+        {
+            nodeToBrowse
+        };
+
+        try
+        {
+            Session session = await _helper.GetSessionAsync(SessionId, EndpointUrl).ConfigureAwait(false);
+
+            session.Browse(
+                    null,
+                    null,
+                    0,
+                    nodesToBrowse,
+                    out BrowseResultCollection results,
+                    out DiagnosticInfoCollection diagnosticInfos);
+
+            ClientBase.ValidateResponse(results, nodesToBrowse);
+            ClientBase.ValidateDiagnosticInfos(diagnosticInfos, nodesToBrowse);
+
+            do
+            {
+                // check for error.
+                if (StatusCode.IsBad(results[0].StatusCode))
+                {
+                    break;
+                }
+
+                // process results.
+                for (int i = 0; i < results[0].References.Count; i++)
+                {
+                    references.Add(results[0].References[i]);
+                }
+
+                // check if all references have been fetched.
+                if (results[0].References.Count == 0 || results[0].ContinuationPoint == null)
+                {
+                    break;
+                }
+
+                // continue browse operation.
+                ByteStringCollection continuationPoints = new ByteStringCollection
+                    {
+                        results[0].ContinuationPoint
+                    };
+
+                session.BrowseNext(
+                    null,
+                    false,
+                    continuationPoints,
+                    out results,
+                    out diagnosticInfos);
+
+                ClientBase.ValidateResponse(results, continuationPoints);
+                ClientBase.ValidateDiagnosticInfos(diagnosticInfos, continuationPoints);
+            }
+            while (true);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = ex.Message;
+
+            _helper.Disconnect(SessionId);
+
+            throw;
+        }
+
+        return references;
+    }
+
+    private async Task<List<UANode>> GetChildrenAsync(UANode node)
+    {
+        List<UANode> nodes = new();
+
+        try
+        {
+            ReferenceDescriptionCollection references = await BrowseNodeAsync(node.NodeId).ConfigureAwait(false);
+            if (references != null)
+            {
+                List<string> processedReferences = new();
+                foreach (ReferenceDescription nodeReference in references)
+                {
+                    // filter out duplicates
+                    if (processedReferences.Contains(nodeReference.NodeId.ToString()))
+                    {
+                        continue;
+                    }
+
+                    ReferenceDescriptionCollection childReferences = null;
+                    try
+                    {
+                        Session session = await _helper.GetSessionAsync(SessionId, EndpointUrl).ConfigureAwait(false);
+
+                        childReferences = await BrowseNodeAsync(ExpandedNodeId.ToNodeId(nodeReference.NodeId, session.NamespaceUris)).ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        // skip this node
+                        continue;
+                    }
+
+                    nodes.Add(new UANode
+                    {
+                       NodeId = nodeReference.NodeId.ToString(),
+                       Text = nodeReference.DisplayName.ToString()
+                    });
+
+                    processedReferences.Add(nodeReference.NodeId.ToString());
+                }
+            }
+
+            return nodes;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = ex.Message;
+
+            _helper.Disconnect(SessionId);
+
+            return nodes;
+        }
+    }
+
+    private async Task VariableReadAsync(UANode node)
+    {
+        try
+        {
+            // set default values
+            NodeId = node.NodeId;
+            NodeDisplayName = node.Text;
+            NodeType = string.Empty;
+            NodeNotPublishable = true;
+
+            Session session = await _helper.GetSessionAsync(SessionId, EndpointUrl).ConfigureAwait(false);
+            Node response = session.ReadNode(node.NodeId);
+
+            NodeId = new ExpandedNodeId(response.NodeId, session.NamespaceUris.ToArray()[response.NodeId.NamespaceIndex]).ToString();
+
+            if (response is VariableNode)
+            {
+                NodeType = ((VariableNode)response).DataType.ToString();
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = ex.Message;
+
+            _helper.Disconnect(SessionId);
+        }
+    }
+}

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Opc.Ua;
 using Opc.Ua.Client;
@@ -18,21 +19,13 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
-using System.Xml;
-using System.Xml.Serialization;
 using UANodesetWebViewer.Models;
 
 namespace UANodesetWebViewer.Controllers
 {
-    public class StatusHub : Hub
-    {
-    }
-
     public class BrowserController : Controller
     {
         public static List<string> _nodeSetFilenames = new List<string>();
-
-        private IHubContext<StatusHub> _hubContext;
 
         private static HttpClient _client = new HttpClient();
 
@@ -40,29 +33,13 @@ namespace UANodesetWebViewer.Controllers
 
         private static Dictionary<string, string> _namesInCloudLibrary = new Dictionary<string, string>();
 
-        private static ApplicationInstance _application = new ApplicationInstance();
+        private readonly OpcSessionHelper _helper;
+        private readonly ApplicationInstance _application;
 
-        public BrowserController(IHubContext<StatusHub> hubContext)
+        public BrowserController(OpcSessionHelper helper, ApplicationInstance app)
         {
-             _hubContext = hubContext;
-        }
-
-
-        private class MethodCallParameterData
-        {
-            public string Name { get; set; }
-
-            public string Value { get; set; }
-
-            public string ValueRank { get; set; }
-
-            public string ArrayDimensions { get; set; }
-
-            public string Description { get; set; }
-
-            public string Datatype { get; set; }
-
-            public string TypeName { get; set; }
+            _helper = helper;
+            _application = app;
         }
 
         public ActionResult Index()
@@ -74,17 +51,15 @@ namespace UANodesetWebViewer.Controllers
             };
 
             OpcSessionCacheData entry = null;
-            if (OpcSessionHelper.Instance.OpcSessionCache.TryGetValue(HttpContext.Session.Id, out entry))
+            if (_helper.OpcSessionCache.TryGetValue(HttpContext.Session.Id, out entry))
             {
-                sessionModel.ServerIP = entry.EndpointURL.Host;
-                sessionModel.ServerPort = entry.EndpointURL.Port.ToString();
+                sessionModel.EndpointUrl = "opc.tcp://localhost";
 
-                HttpContext.Session.SetString("EndpointUrl", entry.EndpointURL.AbsoluteUri);
+                HttpContext.Session.SetString("EndpointUrl", entry.EndpointURL);
 
                 return View("Browse", sessionModel);
             }
 
-            UpdateStatus("Additional Information Required");
             return View("Index", sessionModel);
         }
 
@@ -159,67 +134,15 @@ namespace UANodesetWebViewer.Controllers
                     }
                     package.CreateRelationship(origin.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aasx-origin");
 
-                    // create package spec part
-                    string packageSpecPath = Path.Combine(Directory.GetCurrentDirectory(), "aasenv-with-no-id.aas.xml");
-                    using (StringReader reader = new StringReader(System.IO.File.ReadAllText(packageSpecPath)))
-                    {
-                        XmlSerializer aasSerializer = new XmlSerializer(typeof(AasEnv));
-                        AasEnv aasEnv = (AasEnv)aasSerializer.Deserialize(reader);
-
-                        aasEnv.AssetAdministrationShells.AssetAdministrationShell.SubmodelRefs.Clear();
-                        aasEnv.Submodels.Clear();
-
-                        foreach(string filename in _nodeSetFilenames)
-                        {
-                            string submodelPath = Path.Combine(Directory.GetCurrentDirectory(), "submodel.aas.xml");
-                            using (StringReader reader2 = new StringReader(System.IO.File.ReadAllText(submodelPath)))
-                            {
-                                XmlSerializer aasSubModelSerializer = new XmlSerializer(typeof(AASSubModel));
-                                AASSubModel aasSubModel = (AASSubModel)aasSubModelSerializer.Deserialize(reader2);
-
-                                SubmodelRef nodesetReference = new SubmodelRef();
-                                nodesetReference.Keys = new Keys();
-                                nodesetReference.Keys.Key = new Key
-                                {
-                                    IdType = "URI",
-                                    Local = true,
-                                    Type = "Submodel",
-                                    Text = "http://www.opcfoundation.org/type/opcua/" + Path.GetFileName(filename).Replace(".", "").ToLower()
-                            };
-
-                                aasEnv.AssetAdministrationShells.AssetAdministrationShell.SubmodelRefs.Add(nodesetReference);
-
-                                aasSubModel.Identification.Text += Path.GetFileName(filename).Replace(".", "").ToLower();
-                                aasSubModel.SubmodelElements.SubmodelElement.SubmodelElementCollection.Value.SubmodelElement.File.Value =
-                                    aasSubModel.SubmodelElements.SubmodelElement.SubmodelElementCollection.Value.SubmodelElement.File.Value.Replace("TOBEREPLACED", Path.GetFileName(filename));
-                                aasEnv.Submodels.Add(aasSubModel);
-                            }
-                        }
-
-                        XmlTextWriter aasWriter = new XmlTextWriter(packageSpecPath, Encoding.UTF8);
-                        aasSerializer.Serialize(aasWriter, aasEnv);
-                        aasWriter.Close();
-                    }
-
                     // add package spec part
-                    PackagePart spec = package.CreatePart(new Uri("/aasx/aasenv-with-no-id/aasenv-with-no-id.aas.xml", UriKind.Relative), MediaTypeNames.Text.Xml);
-                    using (FileStream fileStream = new FileStream(packageSpecPath, FileMode.Open, FileAccess.Read))
+                    PackagePart spec = package.CreatePart(new Uri("/aasx/" + _nodeSetFilenames[0], UriKind.Relative), MediaTypeNames.Text.Xml);
+                    string submodelPath = Path.Combine(Directory.GetCurrentDirectory(), _nodeSetFilenames[0]);
+                    using (FileStream reader2 = new(submodelPath,FileMode.Open))
                     {
-                        CopyStream(fileStream, spec.GetStream());
+                        CopyStream(reader2, spec.GetStream());
                     }
-                    origin.CreateRelationship(spec.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aas-spec");
 
-                    // add nodeset files
-                    for(int i = 0; i < _nodeSetFilenames.Count; i++)
-                    {
-                        PackagePart supplementalDoc = package.CreatePart(new Uri("/aasx/" + Path.GetFileName(_nodeSetFilenames[i]), UriKind.Relative), MediaTypeNames.Text.Xml);
-                        string documentPath = Path.Combine(Directory.GetCurrentDirectory(), _nodeSetFilenames[i]);
-                        using (FileStream fileStream = new FileStream(documentPath, FileMode.Open, FileAccess.Read))
-                        {
-                            CopyStream(fileStream, supplementalDoc.GetStream());
-                        }
-                        package.CreateRelationship(supplementalDoc.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aas-suppl");
-                    }
+                    origin.CreateRelationship(spec.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aas-spec");
                 }
 
                 return File(new FileStream(Path.Combine(Directory.GetCurrentDirectory(), "UANodeSet.aasx"), FileMode.Open, FileAccess.Read), "APPLICATION/octet-stream", "UANodeSet.aasx");
@@ -228,7 +151,7 @@ namespace UANodesetWebViewer.Controllers
             {
                 OpcSessionModel sessionModel = new OpcSessionModel
                 {
-                    ErrorMessage = HttpUtility.HtmlDecode(ex.Message)
+                    StatusMessage = HttpUtility.HtmlDecode(ex.Message)
                 };
 
                 return View("Error", sessionModel);
@@ -251,11 +174,9 @@ namespace UANodesetWebViewer.Controllers
         {
             OpcSessionModel sessionModel = new OpcSessionModel
             {
-                ErrorMessage = HttpUtility.HtmlDecode(errorMessage),
+                StatusMessage = HttpUtility.HtmlDecode(errorMessage),
                 NodesetIDs = new SelectList(new List<string>())
             };
-
-            UpdateStatus($"Error Occured: {sessionModel.ErrorMessage}");
 
             return View("Error", sessionModel);
         }
@@ -264,8 +185,7 @@ namespace UANodesetWebViewer.Controllers
         {
             OpcSessionModel sessionModel = new OpcSessionModel
             {
-                ServerIP = "localhost",
-                ServerPort = "4840",
+                EndpointUrl = "opc.tcp://localhost"
             };
 
             string address = _client.BaseAddress + "infomodel/download/";
@@ -289,7 +209,7 @@ namespace UANodesetWebViewer.Controllers
             string error = ValidateNamespacesAndModels(true);
             if (!string.IsNullOrEmpty(error))
             {
-                sessionModel.ErrorMessage = error;
+                sessionModel.StatusMessage = error;
                 return View("Error", sessionModel);
             }
 
@@ -303,8 +223,7 @@ namespace UANodesetWebViewer.Controllers
         {
             OpcSessionModel sessionModel = new OpcSessionModel
             {
-                ServerIP = "localhost",
-                ServerPort = "4840",
+                EndpointUrl = "opc.tcp://localhost"
             };
 
             try
@@ -338,7 +257,7 @@ namespace UANodesetWebViewer.Controllers
                 string error = ValidateNamespacesAndModels(autodownloadreferences);
                 if (!string.IsNullOrEmpty(error))
                 {
-                    sessionModel.ErrorMessage = error;
+                    sessionModel.StatusMessage = error;
                     return View("Error", sessionModel);
                 }
 
@@ -350,8 +269,7 @@ namespace UANodesetWebViewer.Controllers
             {
                 Trace.TraceError(ex.Message);
 
-                sessionModel.ErrorMessage = ex.Message;
-                UpdateStatus($"Error Occured: {sessionModel.ErrorMessage}");
+                sessionModel.StatusMessage = ex.Message;
 
                 return View("Error", sessionModel);
             }
@@ -369,9 +287,9 @@ namespace UANodesetWebViewer.Controllers
 
             // start the UA client
             Session session = null;
-            string endpointURL = "opc.tcp://" + sessionModel.ServerIP + ":" + sessionModel.ServerPort + "/";
-            session = await OpcSessionHelper.Instance.GetSessionAsync(_application.ApplicationConfiguration, HttpContext.Session.Id, endpointURL, true).ConfigureAwait(false);
-            UpdateStatus("Connected");
+            string endpointURL = "opc.tcp://localhost";
+
+            session = await _helper.GetSessionAsync(HttpContext.Session.Id, endpointURL).ConfigureAwait(false);
 
             HttpContext.Session.SetString("EndpointUrl", endpointURL);
         }
@@ -533,7 +451,7 @@ namespace UANodesetWebViewer.Controllers
         {
             try
             {
-                OpcSessionHelper.Instance.Disconnect(HttpContext.Session.Id);
+                _helper.Disconnect(HttpContext.Session.Id);
                 HttpContext.Session.SetString("EndpointUrl", string.Empty);
             }
             catch (Exception ex)
@@ -546,8 +464,6 @@ namespace UANodesetWebViewer.Controllers
                 _application.Stop();
             }
 
-            UpdateStatus("Disconnected");
-
             OpcSessionModel sessionModel = new OpcSessionModel
             {
                 SessionId = HttpContext.Session.Id,
@@ -555,364 +471,6 @@ namespace UANodesetWebViewer.Controllers
             };
 
             return View("Index", sessionModel);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> GetRootNode()
-        {
-            ReferenceDescriptionCollection references;
-            Byte[] continuationPoint;
-            var jsonTree = new List<object>();
-
-            bool lastRetry = false;
-            while (true)
-            {
-                try
-                {
-                    Session session = await OpcSessionHelper.Instance.GetSessionAsync(_application.ApplicationConfiguration, HttpContext.Session.Id, HttpContext.Session.GetString("EndpointUrl")).ConfigureAwait(false);
-
-                    session.Browse(
-                        null,
-                        null,
-                        ObjectIds.RootFolder,
-                        0u,
-                        BrowseDirection.Forward,
-                        ReferenceTypeIds.HierarchicalReferences,
-                        true,
-                        0,
-                        out continuationPoint,
-                        out references);
-                    jsonTree.Add(new { id = ObjectIds.RootFolder.ToString(), text = "Root", children = (references?.Count != 0) });
-
-                    return Json(jsonTree);
-                }
-                catch (Exception ex)
-                {
-                    OpcSessionHelper.Instance.Disconnect(HttpContext.Session.Id);
-                    if (lastRetry)
-                    {
-                        return Content(CreateOpcExceptionActionString(ex));
-                    }
-                    lastRetry = true;
-                }
-            }
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> GetChildren(string jstreeNode)
-        {
-            // This delimiter is used to allow the storing of the OPC UA parent node ID together with the OPC UA child node ID in jstree data structures and provide it as parameter to
-            // Ajax calls.
-            var node = OpcSessionHelper.GetNodeIdFromJsTreeNode(jstreeNode);
-
-            ReferenceDescriptionCollection references = null;
-            Byte[] continuationPoint;
-            var jsonTree = new List<object>();
-
-            // read the currently published nodes
-            Session session = null;
-            string endpointUrl = null;
-            try
-            {
-                UpdateStatus("Connecting to OPC Server");
-                session = await OpcSessionHelper.Instance.GetSessionAsync(_application.ApplicationConfiguration, HttpContext.Session.Id, HttpContext.Session.GetString("EndpointUrl")).ConfigureAwait(false);
-                endpointUrl = session.ConfiguredEndpoint.EndpointUrl.AbsoluteUri;
-            }
-            catch (Exception ex)
-            {
-                // do nothing, since we still want to show the tree
-                Trace.TraceError("Can not read published nodes for endpoint '{0}'.", endpointUrl);
-                Trace.TraceError(ex.Message);
-            }
-
-            bool lastRetry = false;
-            while (true)
-            {
-                try
-                {
-                    Stopwatch stopwatch = new Stopwatch();
-                    stopwatch.Start();
-
-                    try
-                    {
-                        if (session.Disposed)
-                        {
-                            session.Reconnect();
-                        }
-
-                        UpdateStatus($"Browse OPC UA node {node}");
-                        session.Browse(
-                            null,
-                            null,
-                            node,
-                            0u,
-                            BrowseDirection.Forward,
-                            ReferenceTypeIds.HierarchicalReferences,
-                            true,
-                            0,
-                            out continuationPoint,
-                            out references);
-                    }
-                    catch (Exception ex)
-                    {
-                        Trace.TraceError("Can not browse node '{0}'", node);
-                        Trace.TraceError(ex.Message);
-                    }
-
-                    Trace.TraceInformation("Browsing node '{0}' data took {0} ms", node.ToString(), stopwatch.ElapsedMilliseconds);
-
-                    if (references != null)
-                    {
-                        var idList = new List<string>();
-                        foreach (var nodeReference in references)
-                        {
-                            bool idFound = false;
-                            foreach (var id in idList)
-                            {
-                                if (id == nodeReference.NodeId.ToString())
-                                {
-                                    idFound = true;
-                                }
-                            }
-                            if (idFound == true)
-                            {
-                                continue;
-                            }
-
-                            ReferenceDescriptionCollection childReferences = null;
-                            Byte[] childContinuationPoint;
-
-                            Trace.TraceInformation("Browse '{0}' count: {1}", nodeReference.NodeId, jsonTree.Count);
-
-                            INode currentNode = null;
-                            try
-                            {
-                                if (session.Disposed)
-                                {
-                                    session.Reconnect();
-                                }
-
-                                UpdateStatus($"Browse OPC UA node {ExpandedNodeId.ToNodeId(nodeReference.NodeId, session.NamespaceUris)}");
-                                session.Browse(
-                                    null,
-                                    null,
-                                    ExpandedNodeId.ToNodeId(nodeReference.NodeId, session.NamespaceUris),
-                                    0u,
-                                    BrowseDirection.Forward,
-                                    ReferenceTypeIds.HierarchicalReferences,
-                                    true,
-                                    0,
-                                    out childContinuationPoint,
-                                    out childReferences);
-
-                                UpdateStatus($"Read OPC UA node {ExpandedNodeId.ToNodeId(nodeReference.NodeId, session.NamespaceUris)}");
-                                currentNode = session.ReadNode(ExpandedNodeId.ToNodeId(nodeReference.NodeId, session.NamespaceUris));
-                            }
-                            catch (Exception ex)
-                            {
-                                Trace.TraceError("Can not browse or read node '{0}'", nodeReference.NodeId);
-                                Trace.TraceError(ex.Message);
-
-                                // skip this node
-                                continue;
-                            }
-
-                            byte currentNodeAccessLevel = 0;
-                            byte currentNodeEventNotifier = 0;
-                            bool currentNodeExecutable = false;
-
-                            VariableNode variableNode = currentNode as VariableNode;
-                            if (variableNode != null)
-                            {
-                                currentNodeAccessLevel = variableNode.UserAccessLevel;
-                            }
-
-                            ObjectNode objectNode = currentNode as ObjectNode;
-                            if (objectNode != null)
-                            {
-                                currentNodeEventNotifier = objectNode.EventNotifier;
-                            }
-
-                            ViewNode viewNode = currentNode as ViewNode;
-                            if (viewNode != null)
-                            {
-                                currentNodeEventNotifier = viewNode.EventNotifier;
-                            }
-
-                            MethodNode methodNode = currentNode as MethodNode;
-                            if (methodNode != null)
-                            {
-                                currentNodeExecutable = methodNode.UserExecutable;
-                            }
-
-                            jsonTree.Add(new
-                            {
-                                id = ("__" + node + OpcSessionHelper.Delimiter + nodeReference.NodeId.ToString()),
-                                text = nodeReference.DisplayName.ToString() + " (ns=" + session.NamespaceUris.ToArray()[nodeReference.NodeId.NamespaceIndex] + ";" + nodeReference.NodeId.ToString() + ")",
-                                nodeClass = nodeReference.NodeClass.ToString(),
-                                accessLevel = currentNodeAccessLevel.ToString(),
-                                eventNotifier = currentNodeEventNotifier.ToString(),
-                                executable = currentNodeExecutable.ToString(),
-                                children = (childReferences.Count == 0) ? false : true,
-                                publishedNode = false
-                            });
-                            idList.Add(nodeReference.NodeId.ToString());
-                        }
-
-                        // If there are no children, then this is a call to read the properties of the node itself.
-                        if (jsonTree.Count == 0)
-                        {
-                            INode currentNode = null;
-
-                            try
-                            {
-                                currentNode = session.ReadNode(new NodeId(node));
-                            }
-                            catch (Exception ex)
-                            {
-                                Trace.TraceError("Can not read node '{0}'", new NodeId(node));
-                                Trace.TraceError(ex.Message);
-                            }
-
-                            if (currentNode == null)
-                            {
-                                byte currentNodeAccessLevel = 0;
-                                byte currentNodeEventNotifier = 0;
-                                bool currentNodeExecutable = false;
-
-                                VariableNode variableNode = currentNode as VariableNode;
-
-                                if (variableNode != null)
-                                {
-                                    currentNodeAccessLevel = variableNode.UserAccessLevel;
-                                }
-
-                                ObjectNode objectNode = currentNode as ObjectNode;
-
-                                if (objectNode != null)
-                                {
-                                    currentNodeEventNotifier = objectNode.EventNotifier;
-                                }
-
-                                ViewNode viewNode = currentNode as ViewNode;
-
-                                if (viewNode != null)
-                                {
-                                    currentNodeEventNotifier = viewNode.EventNotifier;
-                                }
-
-                                MethodNode methodNode = currentNode as MethodNode;
-
-                                if (methodNode != null)
-                                {
-                                    currentNodeExecutable = methodNode.UserExecutable;
-                                }
-
-                                jsonTree.Add(new
-                                {
-                                    id = jstreeNode,
-                                    text = currentNode.DisplayName.ToString() + " (ns=" + session.NamespaceUris.ToArray()[currentNode.NodeId.NamespaceIndex] + ";" + currentNode.NodeId.ToString() + ")",
-                                    nodeClass = currentNode.NodeClass.ToString(),
-                                    accessLevel = currentNodeAccessLevel.ToString(),
-                                    eventNotifier = currentNodeEventNotifier.ToString(),
-                                    executable = currentNodeExecutable.ToString(),
-                                    children = false
-                                });
-                            }
-                        }
-                    }
-
-                    stopwatch.Stop();
-                    Trace.TraceInformation("Browsing all child infos of node '{0}' took {0} ms", node, stopwatch.ElapsedMilliseconds);
-
-                    return Json(jsonTree);
-                }
-                catch (Exception ex)
-                {
-                    OpcSessionHelper.Instance.Disconnect(HttpContext.Session.Id);
-                    if (lastRetry)
-                    {
-                        return Content(CreateOpcExceptionActionString(ex));
-                    }
-                    lastRetry = true;
-                }
-            }
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> VariableRead(string jstreeNode)
-        {
-            var node = OpcSessionHelper.GetNodeIdFromJsTreeNode(jstreeNode);
-            bool lastRetry = false;
-            while (true)
-            {
-                try
-                {
-                    DataValueCollection values = null;
-                    DiagnosticInfoCollection diagnosticInfos = null;
-                    ReadValueIdCollection nodesToRead = new ReadValueIdCollection();
-                    ReadValueId valueId = new ReadValueId();
-                    valueId.NodeId = new NodeId(node);
-                    valueId.AttributeId = Attributes.Value;
-                    valueId.IndexRange = null;
-                    valueId.DataEncoding = null;
-                    nodesToRead.Add(valueId);
-
-                    UpdateStatus($"Read OPC UA node: {valueId.NodeId}");
-
-                    Session session = await OpcSessionHelper.Instance.GetSessionAsync(_application.ApplicationConfiguration, HttpContext.Session.Id, HttpContext.Session.GetString("EndpointUrl")).ConfigureAwait(false);
-                    ResponseHeader responseHeader = session.Read(null, 0, TimestampsToReturn.Both, nodesToRead, out values, out diagnosticInfos);
-
-                    string actionResult;
-                    if (values.Count > 0)
-                    {
-                        actionResult = $"{{ \"value\": \"{values[0]}\", \"status\": \"{values[0].StatusCode}\", \"sourceTimestamp\": \"{values[0].SourceTimestamp}\", \"serverTimestamp\": \"{values[0].ServerTimestamp}\" }}";
-                    }
-                    else
-                    {
-                        actionResult = string.Empty;
-                    }
-
-                    return Content(actionResult);
-                }
-                catch (Exception ex)
-                {
-                    OpcSessionHelper.Instance.Disconnect(HttpContext.Session.Id);
-
-                    if (lastRetry)
-                    {
-                        return Content(CreateOpcExceptionActionString(ex));
-                    }
-
-                    lastRetry = true;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Writes an error message to the trace and generates an HTML encoded string to be sent to the client in case of an error.
-        /// </summary>
-        private string CreateOpcExceptionActionString(Exception ex)
-        {
-            Trace.TraceError(ex.Message);
-
-            string actionResult = HttpUtility.HtmlEncode(ex.Message);
-            Response.StatusCode = 1;
-            return actionResult;
-        }
-
-        /// <summary>
-        /// Sends the message to all connected clients as status indication
-        /// </summary>
-        /// <param name="message">Text to show on web page</param>
-        private void UpdateStatus(string message)
-        {
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                throw new ArgumentException(nameof(message));
-            }
-
-            _hubContext.Clients.All.SendAsync("addNewMessageToPage", HttpContext?.Session.Id, message).Wait();
         }
     }
 }

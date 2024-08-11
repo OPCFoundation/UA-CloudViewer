@@ -4,7 +4,43 @@
     ViewData["Title"] = "Open nodeset files";
 }
 
-<h1>@ViewData["Title"]</h1>
+<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="Login">
+    <div class="container-fluid browser_connect_container">
+        <p>
+            <h2>Step 1: Login to UA Cloud Library</h2>
+        </p>
+        <p>
+            UA Cloud Library instance Url<br />
+            @Html.TextBox("instanceUrl", "https://uacloudlibrary.opcfoundation.org", new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            UA Cloud Library username<br />
+                @Html.TextBox("clientId", null, new { style = "width:100%;" })<br />
+        <p />
+        <p>
+            UA Cloud Library password<br />
+                    @Html.Password("secret", null, new { style = "width:100%;" })<br />
+        <p />
+        <input class="btn btn-primary" type="submit" value="Login">
+    </div>
+</form>
+
+<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="CloudLibrayFileOpen">
+    <div class="container-fluid browser_connect_container">
+        <br />
+        <hr />
+        <br />
+        <p>
+            <h2>Step 2: Open nodeset files from UA Cloud Library</h2>
+        </p>
+        <p>
+            @Html.DropDownList("nodesetfile", @Model.NodesetIDs, null, new { @class = "form-control" })
+        </p>
+        <p>
+            <input class="btn btn-primary" type="submit" value="Open">
+        </p>
+    </div>
+</form>
 
 <form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="LocalFileOpen">
     <div class="container-fluid browser_connect_container">
@@ -12,7 +48,7 @@
         <hr />
         <br />
         <p>
-            <h2>Open local nodeset files</h2>
+            <h2>Alternative Step 2: Open local nodeset files</h2>
         </p>
         <p>
             <input class="btn btn-primary" type="file" name="files" multiple>
@@ -21,47 +57,9 @@
             <input class="btn btn-primary" type="submit" value="Open">
         </p>
         <p>
-            Automatically download and open referenced nodeset files from UA Cloud Library? (Please login below first)<br />
-            @Html.CheckBox("autodownloadreferences", true)<br />
+            @Html.CheckBox("autodownloadreferences", true)Automatically download and open referenced nodeset files from UA Cloud Library<br />
         </p>
     </div>
 </form>
-<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="CloudLibrayFileOpen">
-    <div class="container-fluid browser_connect_container">
-        <br/>
-        <hr />
-        <br />
-        <p>
-            <h2>Open nodeset files from UA Cloud Library (please login below first)</h2>
-        </p>
-        <p>
-            @Html.DropDownList("nodesetfile", @Model.NodesetIDs, null, new { @class = "form-control"})
-        </p>
-        <p>
-            <input class="btn btn-primary" type="submit" value="Open">
-        </p>
-    </div>
-</form>
-<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="Login">
-    <div class="container-fluid browser_connect_container">
-        <br />
-        <hr />
-        <br />
-        <p>
-            <h2>Login to UA Cloud Library</h2>
-        </p>
-        <p>
-            UA Cloud Library instance Url<br />
-            @Html.TextBox("instanceUrl", "https://uacloudlibrary.opcfoundation.org", new { style = "width:100%;" })<br />
-        <p />
-        <p>
-            UA Cloud Library username<br />
-            @Html.TextBox("clientId", null, new { style = "width:100%;" })<br />
-        <p />
-        <p>
-            UA Cloud Library password<br />
-            @Html.Password("secret", null, new { style = "width:100%;" })<br />
-        <p />
-        <input class="btn btn-primary" type="submit" value="Login">
-    </div>
-</form>
+
+

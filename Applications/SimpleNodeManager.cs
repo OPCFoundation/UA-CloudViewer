@@ -36,8 +36,6 @@ namespace UANodesetWebViewer
                             }
                         }
                     }
-
-                    DTDL.Generate(nodeSet);
                 }
             }
 

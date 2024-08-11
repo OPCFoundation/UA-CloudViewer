@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Opc.Ua.Configuration;
 using System;
 using System.IO;
-using UANodesetWebViewer.Controllers;
 
 namespace UANodesetWebViewer
 {
@@ -37,6 +37,12 @@ namespace UANodesetWebViewer
 
             services.AddControllersWithViews();
             services.AddSignalR();
+
+            services.AddRazorPages();
+            services.AddServerSideBlazor();
+
+            services.AddSingleton<OpcSessionHelper>();
+            services.AddSingleton<ApplicationInstance>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -49,10 +55,13 @@ namespace UANodesetWebViewer
             else
             {
                 app.UseExceptionHandler("/Browser/Error");
+
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
             app.UseHttpsRedirection();
+
             app.UseStaticFiles();
 
             app.UseSession();
@@ -66,7 +75,7 @@ namespace UANodesetWebViewer
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Browser}/{action=Index}/{id?}");
-                endpoints.MapHub<StatusHub>("/statushub");
+                endpoints.MapBlazorHub();
             });
         }
     }
