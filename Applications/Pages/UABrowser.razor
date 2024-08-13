@@ -17,6 +17,7 @@
         Node Id: <b>@NodeId</b><br />
         Node Display Name: <b>@NodeDisplayName</b><br />
         Node Data Type: <b>@NodeType</b><br />
+        Mapped to Web of Things TD Properties:
     </div>
 </div>
 <div class="text-danger">
@@ -125,7 +126,6 @@
             BrowseDirection = BrowseDirection.Forward,
             ReferenceTypeId = null,
             IncludeSubtypes = true,
-            NodeClassMask = (uint)(NodeClass.Object | NodeClass.Variable),
             ResultMask = (uint)BrowseResultMask.All
         };
 
