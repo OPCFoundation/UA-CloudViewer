@@ -8,9 +8,16 @@
 }
 
 <h1>@ViewData["Title"]</h1>
+<p>
+    @Model.NodesetFile
+</p>
+
+<br />
+<hr />
+<br />
 
 <p>
-    <component>@(await Html.RenderComponentAsync<UABrowser>(RenderMode.Server, new { EndpointUrl = Model.EndpointUrl, Username = Model.UserName, Password = Model.Password }).ConfigureAwait(false))</component>
+    <component>@(await Html.RenderComponentAsync<UABrowser>(RenderMode.Server, new { EndpointUrl = Model.EndpointUrl }).ConfigureAwait(false))</component>
 </p>
 
 <div class="row browser_browse_disconnect_button">
@@ -20,3 +27,46 @@
     }
 </div>
 
+<form method="post" enctype="multipart/form-data" asp-controller="Browser" asp-action="WoTFileOpen">
+    <div class="container-fluid browse_open_wot_button">
+
+        <br />
+        <hr />
+        <br />
+        <p>
+            <h2>Open a WoT file to map the OPC UA nodeset file to:</h2>
+        </p>
+        <p>
+            <input class="btn btn-primary" type="file" name="file">
+        </p>
+        <p>
+            <input class="btn btn-primary" type="submit" value="Open">
+        </p>
+    </div>
+</form>
+
+<div class="container-fluid browser_browse_download_wot_button">
+
+    <br />
+    <hr />
+    <br />
+
+    @using (Html.BeginForm("MapWoTProperty", "Browser"))
+    {
+        <p>Loaded WoT file: @Model.WoTFile
+        </p>
+        <br />
+        <p>
+            @Html.DropDownList("wotproperty", @Model.WoTProperties, null, new { @class = "form-control" })
+        </p>
+        <p>
+            <input id="mapButton" class="btn btn-primary btn_browser" type="submit" value="Map WoT Property to currently selected OPC UA node" />
+        </p>
+    }
+    @using (Html.BeginForm("DownloadWoT", "Browser"))
+    {
+        <p>
+            <input id="downloadButton" class="btn btn-primary btn_browser" type="submit" value="Download mapped WoT file" />
+        </p>
+    }
+</div>

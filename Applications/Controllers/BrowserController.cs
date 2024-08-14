@@ -1,13 +1,12 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Opc.Ua;
 using Opc.Ua.Client;
 using Opc.Ua.Cloud.Library.Models;
 using Opc.Ua.Configuration;
+using Opc.Ua.Edge.Translator.Models;
 using Opc.Ua.Export;
 using System;
 using System.Collections.Generic;
@@ -28,50 +27,63 @@ namespace UANodesetWebViewer.Controllers
         public static List<string> _nodeSetFilenames = new List<string>();
 
         private static HttpClient _client = new HttpClient();
-
         private static Dictionary<string, string> _namespacesInCloudLibrary = new Dictionary<string, string>();
-
         private static Dictionary<string, string> _namesInCloudLibrary = new Dictionary<string, string>();
+        private static List<string> _wotProperties = new List<string>();
+        private static ThingDescription _td;
+        private static string _wotFileName = string.Empty;
 
         private readonly OpcSessionHelper _helper;
         private readonly ApplicationInstance _application;
+
+        private OpcSessionModel _session;
 
         public BrowserController(OpcSessionHelper helper, ApplicationInstance app)
         {
             _helper = helper;
             _application = app;
+
+            _session = new()
+            {
+                NodesetIDs = new SelectList(_namesInCloudLibrary.Values),
+                EndpointUrl = "opc.tcp://localhost",
+                NodesetFile = string.Empty,
+                WoTFile = _wotFileName,
+                WoTProperties = new SelectList(_wotProperties)
+            };
+
+            if (_nodeSetFilenames.Count > 0)
+            {
+                foreach (string filename in _nodeSetFilenames)
+                {
+                    _session.NodesetFile += (filename + ", ");
+                }
+            }
         }
 
         public ActionResult Index()
         {
-            OpcSessionModel sessionModel = new OpcSessionModel
-            {
-                SessionId = HttpContext.Session.Id,
-                NodesetIDs = new SelectList(new List<string>())
-            };
-
             OpcSessionCacheData entry = null;
             if (_helper.OpcSessionCache.TryGetValue(HttpContext.Session.Id, out entry))
             {
-                sessionModel.EndpointUrl = "opc.tcp://localhost";
-
                 HttpContext.Session.SetString("EndpointUrl", entry.EndpointURL);
 
-                return View("Browse", sessionModel);
+                return View("Browse", _session);
             }
 
-            return View("Index", sessionModel);
+            return View("Index", _session);
         }
 
         [HttpPost]
         public ActionResult Login(string instanceUrl, string clientId, string secret)
         {
-            OpcSessionModel sessionModel = new OpcSessionModel
+            if (!string.IsNullOrEmpty(_client.BaseAddress?.ToString()))
             {
-                SessionId = HttpContext.Session.Id,
-                NodesetIDs = new SelectList(new List<string>())
-            };
+                _client.Dispose();
+                _client = new HttpClient();
+            }
 
+            _client.BaseAddress = new Uri(instanceUrl);
             _client.DefaultRequestHeaders.Remove("Authorization");
             _client.DefaultRequestHeaders.Add("Authorization", "basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + secret)));
 
@@ -79,7 +91,6 @@ namespace UANodesetWebViewer.Controllers
             {
                 instanceUrl += '/';
             }
-            _client.BaseAddress = new Uri(instanceUrl);
 
             // get namespaces
             string address = instanceUrl + "infomodel/namespaces";
@@ -87,10 +98,13 @@ namespace UANodesetWebViewer.Controllers
             string[] identifiers = JsonConvert.DeserializeObject<string[]>(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
 
             _namespacesInCloudLibrary.Clear();
-            foreach (string nodeset in identifiers)
+            if (identifiers != null)
             {
-                string[] tuple = nodeset.Split(",");
-                _namespacesInCloudLibrary.Add(tuple[1], tuple[0]);
+                foreach (string nodeset in identifiers)
+                {
+                    string[] tuple = nodeset.Split(",");
+                    _namespacesInCloudLibrary.Add(tuple[1], tuple[0]);
+                }
             }
 
             // get names
@@ -98,19 +112,26 @@ namespace UANodesetWebViewer.Controllers
             response = _client.Send(new HttpRequestMessage(HttpMethod.Get, address));
             string[] names = JsonConvert.DeserializeObject<string[]>(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
 
-            List<string> sortedNames = new List<string>(names);
-            sortedNames.Sort();
-
-            _namesInCloudLibrary.Clear();
-            foreach (string name in sortedNames)
+            if (names != null)
             {
-                string[] tuple = name.Split(",");
-                _namesInCloudLibrary.Add(tuple[1], tuple[0]);
+                List<string> sortedNames = new List<string>(names);
+                sortedNames.Sort();
+
+
+                _namesInCloudLibrary.Clear();
+                if (sortedNames != null)
+                {
+                    foreach (string name in sortedNames)
+                    {
+                        string[] tuple = name.Split(",");
+                        _namesInCloudLibrary.Add(tuple[1], tuple[0]);
+                    }
+                }
             }
 
-            sessionModel.NodesetIDs = new SelectList(_namesInCloudLibrary.Values);
+            _session.NodesetIDs = new SelectList(_namesInCloudLibrary.Values);
 
-            return View("Index", sessionModel);
+            return View("Index", _session);
         }
 
         public ActionResult Privacy()
@@ -149,12 +170,11 @@ namespace UANodesetWebViewer.Controllers
             }
             catch (Exception ex)
             {
-                OpcSessionModel sessionModel = new OpcSessionModel
-                {
-                    StatusMessage = HttpUtility.HtmlDecode(ex.Message)
-                };
+                Trace.TraceError(ex.Message);
 
-                return View("Error", sessionModel);
+                _session.StatusMessage = ex.Message;
+
+                return View("Error", _session);
             }
         }
 
@@ -172,22 +192,13 @@ namespace UANodesetWebViewer.Controllers
         [HttpPost]
         public ActionResult Error(string errorMessage)
         {
-            OpcSessionModel sessionModel = new OpcSessionModel
-            {
-                StatusMessage = HttpUtility.HtmlDecode(errorMessage),
-                NodesetIDs = new SelectList(new List<string>())
-            };
+            _session.StatusMessage = HttpUtility.HtmlDecode(errorMessage);
 
-            return View("Error", sessionModel);
+            return View("Error", _session);
         }
 
         public async Task<ActionResult> CloudLibrayFileOpen(string nodesetfile)
         {
-            OpcSessionModel sessionModel = new OpcSessionModel
-            {
-                EndpointUrl = "opc.tcp://localhost"
-            };
-
             string address = _client.BaseAddress + "infomodel/download/";
             foreach (KeyValuePair<string, string> ns in _namesInCloudLibrary)
             {
@@ -209,23 +220,18 @@ namespace UANodesetWebViewer.Controllers
             string error = ValidateNamespacesAndModels(true);
             if (!string.IsNullOrEmpty(error))
             {
-                sessionModel.StatusMessage = error;
-                return View("Error", sessionModel);
+                _session.StatusMessage = error;
+                return View("Error", _session);
             }
 
-            await StartClientAndServer(sessionModel).ConfigureAwait(false);
+            await StartClientAndServer().ConfigureAwait(false);
 
-            return View("Browse", sessionModel);
+            return View("Browse", _session);
         }
 
         [HttpPost]
         public async Task<ActionResult> LocalFileOpen(IFormFile[] files, bool autodownloadreferences)
         {
-            OpcSessionModel sessionModel = new OpcSessionModel
-            {
-                EndpointUrl = "opc.tcp://localhost"
-            };
-
             try
             {
                 if ((files == null) || (files.Length == 0))
@@ -257,25 +263,96 @@ namespace UANodesetWebViewer.Controllers
                 string error = ValidateNamespacesAndModels(autodownloadreferences);
                 if (!string.IsNullOrEmpty(error))
                 {
-                    sessionModel.StatusMessage = error;
-                    return View("Error", sessionModel);
+                    _session.StatusMessage = error;
+                    return View("Error", _session);
                 }
 
-                await StartClientAndServer(sessionModel).ConfigureAwait(false);
+                await StartClientAndServer().ConfigureAwait(false);
 
-                return View("Browse", sessionModel);
+                return View("Browse", _session);
             }
             catch (Exception ex)
             {
                 Trace.TraceError(ex.Message);
 
-                sessionModel.StatusMessage = ex.Message;
+                _session.StatusMessage = ex.Message;
 
-                return View("Error", sessionModel);
+                return View("Error", _session);
             }
         }
 
-        private async Task StartClientAndServer(OpcSessionModel sessionModel)
+        [HttpPost]
+        public async Task<ActionResult> WoTFileOpen(IFormFile file)
+        {
+            try
+            {
+                if ((file == null) || (file.Length == 0))
+                {
+                    throw new ArgumentException("No file specified!");
+                }
+
+                // file name validation
+                new FileInfo(file.FileName);
+                _wotFileName = file.FileName;
+                _session.WoTFile = _wotFileName;
+
+                using (MemoryStream stream = new())
+                {
+                    await file.CopyToAsync(stream).ConfigureAwait(false);
+
+                    string contents = Encoding.UTF8.GetString(stream.ToArray());
+
+                    // parse WoT TD file contents
+                    _td = JsonConvert.DeserializeObject<ThingDescription>(contents);
+
+                    _wotProperties = new List<string>();
+                    foreach (string propertyName in _td.Properties.Keys)
+                    {
+                        _wotProperties.Add(propertyName);
+                    }
+                    _session.WoTProperties = new SelectList(_wotProperties);
+                }
+
+                return View("Browse", _session);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError(ex.Message);
+
+                _session.StatusMessage = ex.Message;
+
+                return View("Error", _session);
+            }
+        }
+
+        public IActionResult MapWoTProperty(string wotproperty)
+        {
+            return View("Browse", _session);
+        }
+
+        [HttpPost]
+        public IActionResult DownloadWoT()
+        {
+            try
+            {
+                string content = JsonConvert.SerializeObject(_td, Formatting.Indented);
+
+                using (MemoryStream stream = new())
+                {
+                    return File(Encoding.UTF8.GetBytes(content), "application/json", _wotFileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError(ex.Message);
+
+                _session.StatusMessage = ex.Message;
+
+                return View("Error", _session);
+            }
+        }
+
+        private async Task StartClientAndServer()
         {
             // (re-)start the UA server
             if (_application.Server != null)
@@ -464,13 +541,7 @@ namespace UANodesetWebViewer.Controllers
                 _application.Stop();
             }
 
-            OpcSessionModel sessionModel = new OpcSessionModel
-            {
-                SessionId = HttpContext.Session.Id,
-                NodesetIDs = new SelectList(new List<string>())
-            };
-
-            return View("Index", sessionModel);
+            return View("Index", _session);
         }
     }
 }

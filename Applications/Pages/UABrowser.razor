@@ -9,7 +9,16 @@
     <div class="col-6">
         <Tree Nodes="UANodes" TNode="UANode" ChildSelector="node => node.Children" SelectedNodeChanged="SelectedNodeChanged" OnNodeExpand="OnNodeExpand" HasChildNodes="HasChildNodes">
             <TitleTemplate>
-                <span class="text-dark">@context.Text</span>
+                @{
+                    if (context.NodeId.StartsWith("ns="))
+                    {
+                        <span class="text-dark"><b>@context.Text</b></span>
+                    }
+                    else
+                    {
+                        <span class="text-dark">@context.Text</span>
+                    }
+                }
             </TitleTemplate>
         </Tree>
     </div>
@@ -17,7 +26,6 @@
         Node Id: <b>@NodeId</b><br />
         Node Display Name: <b>@NodeDisplayName</b><br />
         Node Data Type: <b>@NodeType</b><br />
-        Mapped to Web of Things TD Properties:
     </div>
 </div>
 <div class="text-danger">
@@ -186,6 +194,23 @@
                 ClientBase.ValidateDiagnosticInfos(diagnosticInfos, continuationPoints);
             }
             while (true);
+
+            // check for structure type
+            Node node = session.ReadNode(nodeId);
+            if (node is DataTypeNode)
+            {
+                DataTypeNode opcuaType = node as DataTypeNode;
+                if (opcuaType?.DataTypeDefinition?.Body is StructureDefinition)
+                {
+                    if (((StructureDefinition)opcuaType?.DataTypeDefinition?.Body)?.Fields?.Count > 0)
+                    {
+                        foreach (StructureField field in ((StructureDefinition)opcuaType?.DataTypeDefinition?.Body)?.Fields)
+                        {
+                            references.Add(new ReferenceDescription() { NodeId = nodeId, DisplayName = field.Name });
+                        }
+                    }
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -211,12 +236,6 @@
                 List<string> processedReferences = new();
                 foreach (ReferenceDescription nodeReference in references)
                 {
-                    // filter out duplicates
-                    if (processedReferences.Contains(nodeReference.NodeId.ToString()))
-                    {
-                        continue;
-                    }
-
                     ReferenceDescriptionCollection childReferences = null;
                     try
                     {
@@ -239,6 +258,8 @@
                     processedReferences.Add(nodeReference.NodeId.ToString());
                 }
             }
+
+            nodes.Sort((x, y) => x.Text.CompareTo(y.Text));
 
             return nodes;
         }
