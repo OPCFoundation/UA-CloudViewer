@@ -92,7 +92,7 @@ namespace UANodesetWebViewer
                 OpcSessionCache.TryAdd(sessionID, newEntry);
             }
 
-            EndpointDescription selectedEndpoint = CoreClientUtils.SelectEndpoint(endpointURL, true);
+            EndpointDescription selectedEndpoint = CoreClientUtils.SelectEndpoint(_app.ApplicationConfiguration, endpointURL, true);
             ConfiguredEndpoint configuredEndpoint = new ConfiguredEndpoint(null, selectedEndpoint, EndpointConfiguration.Create(_app.ApplicationConfiguration));
             uint timeout = (uint)_app.ApplicationConfiguration.ClientConfiguration.DefaultSessionTimeout;
 
@@ -139,58 +139,6 @@ namespace UANodesetWebViewer
             }
 
             return session;
-        }
-
-        private EndpointDescriptionCollection DiscoverEndpoints(ApplicationConfiguration config, Uri discoveryUrl, int timeout)
-        {
-            EndpointConfiguration configuration = EndpointConfiguration.Create(config);
-            configuration.OperationTimeout = timeout;
-
-            using (DiscoveryClient client = DiscoveryClient.Create(
-                discoveryUrl,
-                EndpointConfiguration.Create(config)))
-            {
-                    EndpointDescriptionCollection endpoints = client.GetEndpoints(null);
-                    return ReplaceLocalHostWithRemoteHost(endpoints, discoveryUrl);
-            }
-        }
-
-        private EndpointDescription SelectUaTcpEndpoint(EndpointDescriptionCollection endpointCollection)
-        {
-            EndpointDescription bestEndpoint = null;
-            foreach (EndpointDescription endpoint in endpointCollection)
-            {
-                if (endpoint.TransportProfileUri == Profiles.UaTcpTransport)
-                {
-                    if ((bestEndpoint == null) ||
-                        (endpoint.SecurityLevel > bestEndpoint.SecurityLevel))
-                    {
-                        bestEndpoint = endpoint;
-                    }
-                }
-            }
-
-            return bestEndpoint;
-        }
-
-        private EndpointDescriptionCollection ReplaceLocalHostWithRemoteHost(EndpointDescriptionCollection endpoints, Uri discoveryUrl)
-        {
-            EndpointDescriptionCollection updatedEndpoints = endpoints;
-
-            foreach (EndpointDescription endpoint in updatedEndpoints)
-            {
-                endpoint.EndpointUrl = Utils.ReplaceLocalhost(endpoint.EndpointUrl, discoveryUrl.DnsSafeHost);
-
-                StringCollection updatedDiscoveryUrls = new StringCollection();
-                foreach (string url in endpoint.Server.DiscoveryUrls)
-                {
-                    updatedDiscoveryUrls.Add(Utils.ReplaceLocalhost(url, discoveryUrl.DnsSafeHost));
-                }
-
-                endpoint.Server.DiscoveryUrls = updatedDiscoveryUrls;
-            }
-
-            return updatedEndpoints;
         }
     }
 }

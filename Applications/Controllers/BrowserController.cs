@@ -139,56 +139,6 @@ namespace UANodesetWebViewer.Controllers
             return View("Privacy");
         }
 
-        public ActionResult GenerateAAS()
-        {
-            try
-            {
-                string packagePath = Path.Combine(Directory.GetCurrentDirectory(), "UANodeSet.aasx");
-                using (Package package = Package.Open(packagePath, FileMode.Create))
-                {
-                    // add package origin part
-                    PackagePart origin = package.CreatePart(new Uri("/aasx/aasx-origin", UriKind.Relative), MediaTypeNames.Text.Plain, CompressionOption.Maximum);
-                    using (Stream fileStream = origin.GetStream(FileMode.Create))
-                    {
-                        var bytes = Encoding.ASCII.GetBytes("Intentionally empty.");
-                        fileStream.Write(bytes, 0, bytes.Length);
-                    }
-                    package.CreateRelationship(origin.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aasx-origin");
-
-                    // add package spec part
-                    PackagePart spec = package.CreatePart(new Uri("/aasx/" + _nodeSetFilenames[0], UriKind.Relative), MediaTypeNames.Text.Xml);
-                    string submodelPath = Path.Combine(Directory.GetCurrentDirectory(), _nodeSetFilenames[0]);
-                    using (FileStream reader2 = new(submodelPath,FileMode.Open))
-                    {
-                        CopyStream(reader2, spec.GetStream());
-                    }
-
-                    origin.CreateRelationship(spec.Uri, TargetMode.Internal, "http://www.admin-shell.io/aasx/relationships/aas-spec");
-                }
-
-                return File(new FileStream(Path.Combine(Directory.GetCurrentDirectory(), "UANodeSet.aasx"), FileMode.Open, FileAccess.Read), "APPLICATION/octet-stream", "UANodeSet.aasx");
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError(ex.Message);
-
-                _session.StatusMessage = ex.Message;
-
-                return View("Error", _session);
-            }
-        }
-
-        private void CopyStream(Stream source, Stream target)
-        {
-            const int bufSize = 0x1000;
-            byte[] buf = new byte[bufSize];
-            int bytesRead = 0;
-            while ((bytesRead = source.Read(buf, 0, bufSize)) > 0)
-            {
-                target.Write(buf, 0, bytesRead);
-            }
-        }
-
         [HttpPost]
         public ActionResult Error(string errorMessage)
         {
@@ -502,12 +452,12 @@ namespace UANodesetWebViewer.Controllers
             ApplicationConfiguration config = await _application.LoadApplicationConfiguration(Path.Combine(Directory.GetCurrentDirectory(), "Application.Config.xml"), false).ConfigureAwait(false);
 
             // check the application certificate.
-            await _application.CheckApplicationInstanceCertificate(false, 0).ConfigureAwait(false);
+            await _application.CheckApplicationInstanceCertificates(false, 0).ConfigureAwait(false);
 
             // create cert validator
             config.CertificateValidator = new CertificateValidator();
             config.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(CertificateValidator_CertificateValidation);
-            config.CertificateValidator.Update(config.SecurityConfiguration).GetAwaiter().GetResult();
+            config.CertificateValidator.Update(config).GetAwaiter().GetResult();
 
             // start the server.
             await _application.Start(new SimpleServer()).ConfigureAwait(false);
